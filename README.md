@@ -1,5 +1,9 @@
 # PAIRS Soft UAV Simulation
 
+> **Branch: `ros2`** — this branch adds a ROS 2 (ament_python / rclpy) wrapper
+> around the simulation. See [**ROS 2 wrapper**](#ros-2-wrapper) below. The plain
+> Python demos still work standalone; the `main` branch has no ROS dependency.
+
 MuJoCo drone simulations with cascaded PID control. Two independent demos:
 
 - **HoloArm** — a soft-arm quadrotor flown through a narrow V-shaped gap to test
@@ -72,6 +76,37 @@ Each opens an interactive MuJoCo viewer, so run it from a real desktop session.
 | `←`/`→` or `j`/`l` | left / right |
 | `u` / `o` | up / down |
 | `ESC` | quit |
+
+## ROS 2 wrapper
+
+This branch is an ament_python package (`pairs_softuav_simulation`). The node
+`drone_sim_node` runs the cascaded-PID flight controller from
+`pairs_softuav_simulation/controller.py`, replacing the keyboard teleop with a
+ROS setpoint topic.
+
+| Interface | Topic | Type |
+| --- | --- | --- |
+| Subscribe | `target` | `geometry_msgs/Point` (world-frame setpoint, m) |
+| Publish | `odom` | `nav_msgs/Odometry` (drone state at sim rate) |
+| Broadcast | TF | `odom` → `base_link` |
+
+Place this repo in a colcon workspace `src/`, then build and run:
+
+```bash
+cd ~/ros2_ws && colcon build --packages-select pairs_softuav_simulation
+source install/setup.bash
+
+# MuJoCo + deps must be on the Python that ROS uses:
+pip install mujoco simple-pid numpy
+
+ros2 launch pairs_softuav_simulation holoarm_sim.launch.py
+# fly it:
+ros2 topic pub --once /target geometry_msgs/msg/Point "{x: 1.5, y: 0.0, z: 1.5}"
+```
+
+The `skydio_x2_sim.launch.py` target additionally needs the `mujoco_menagerie`
+download (see [skydio_x2/README.md](skydio_x2/README.md)). This node runs the
+physics headlessly and publishes state; it does not open the MuJoCo GUI viewer.
 
 ## Credits
 
