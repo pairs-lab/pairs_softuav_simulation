@@ -25,7 +25,6 @@ This repo is organized by runtime — clone the branch that matches your stack:
 | `ros2` | ROS 2 (ament_python / rclpy) wrapper node |
 
 ```bash
-git clone -b main https://github.com/pairs-lab/pairs_softuav_simulation.git   # Python only
 git clone -b ros1 https://github.com/pairs-lab/pairs_softuav_simulation.git   # ROS 1
 ```
 
