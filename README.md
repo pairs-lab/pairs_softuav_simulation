@@ -1,5 +1,9 @@
 # PAIRS Soft UAV Simulation
 
+> **Branch: `ros1`** — this branch adds a ROS 1 (catkin / rospy) wrapper around
+> the simulation. See [**ROS 1 wrapper**](#ros-1-wrapper) below. The plain Python
+> demos still work standalone; the `main` branch has no ROS dependency.
+
 MuJoCo drone simulations with cascaded PID control. Two independent demos:
 
 - **HoloArm** — a soft-arm quadrotor flown through a narrow V-shaped gap to test
@@ -72,6 +76,37 @@ Each opens an interactive MuJoCo viewer, so run it from a real desktop session.
 | `←`/`→` or `j`/`l` | left / right |
 | `u` / `o` | up / down |
 | `ESC` | quit |
+
+## ROS 1 wrapper
+
+This branch wraps the simulation in a catkin package (`pairs_softuav_simulation`).
+The node `drone_sim_node.py` runs the cascaded-PID flight controller from
+`src/pairs_softuav_sim/controller.py`, replacing the keyboard teleop with a ROS
+setpoint topic.
+
+| Interface | Topic | Type |
+| --- | --- | --- |
+| Subscribe | `~target` | `geometry_msgs/Point` (world-frame setpoint, m) |
+| Publish | `~odom` | `nav_msgs/Odometry` (drone state at sim rate) |
+| Broadcast | TF | `odom` → `base_link` |
+
+Place this repo in a catkin workspace `src/`, then build and run:
+
+```bash
+cd ~/catkin_ws && catkin_make        # or catkin build
+source devel/setup.bash
+
+# MuJoCo + deps must be on the Python that ROS uses:
+pip install mujoco simple-pid numpy
+
+roslaunch pairs_softuav_simulation holoarm_sim.launch
+# fly it:
+rostopic pub -1 /drone_sim/target geometry_msgs/Point "{x: 1.5, y: 0.0, z: 1.5}"
+```
+
+The `skydio_x2_sim.launch` target additionally needs the `mujoco_menagerie`
+download (see [skydio_x2/README.md](skydio_x2/README.md)). This node runs the
+physics headlessly and publishes state; it does not open the MuJoCo GUI viewer.
 
 ## Credits
 

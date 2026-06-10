@@ -1,0 +1,16 @@
+<launch>
+  <!-- Skydio X2 indoor simulation.
+       Requires the mujoco_menagerie download under skydio_x2/models/
+       (see skydio_x2/README.md) before this model will load. -->
+  <arg name="model"
+       default="$(find pairs_softuav_simulation)/skydio_x2/models/indoor_env.xml"/>
+
+  <node pkg="pairs_softuav_simulation" type="drone_sim_node.py"
+        name="drone_sim" output="screen">
+    <param name="model_path"   value="$(arg model)"/>
+    <param name="hover_thrust" value="3.2495"/>
+    <param name="init_x"       value="3.0"/>
+    <param name="init_y"       value="5.0"/>
+    <param name="init_z"       value="1.0"/>
+  </node>
+</launch>

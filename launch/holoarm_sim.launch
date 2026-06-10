@@ -1,0 +1,14 @@
+<launch>
+  <!-- HoLoArm narrow-passage simulation (self-contained, no extra downloads) -->
+  <arg name="model"
+       default="$(find pairs_softuav_simulation)/holoarm/models/holoarm_narrow_passage.xml"/>
+
+  <node pkg="pairs_softuav_simulation" type="drone_sim_node.py"
+        name="drone_sim" output="screen">
+    <param name="model_path"   value="$(arg model)"/>
+    <param name="hover_thrust" value="2.3789"/>
+    <param name="init_x"       value="0.0"/>
+    <param name="init_y"       value="0.0"/>
+    <param name="init_z"       value="1.0"/>
+  </node>
+</launch>
