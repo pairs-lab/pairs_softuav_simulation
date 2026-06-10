@@ -10,6 +10,22 @@ MuJoCo drone simulations with cascaded PID control. Two independent demos:
   Needs the external [`mujoco_menagerie`](https://github.com/google-deepmind/mujoco_menagerie)
   model (one extra download — see below).
 
+## Branches
+
+This repo is organized by runtime — clone the branch that matches your stack:
+
+| Branch | Contents |
+| --- | --- |
+| `main` | Standalone Python + MuJoCo demos, no ROS — **you are here** |
+| `ros1` | ROS 1 (catkin / rospy) wrapper node |
+| `ros2` | ROS 2 (ament_python / rclpy) wrapper node |
+
+```bash
+git clone -b main https://github.com/pairs-lab/pairs_softuav_simulation.git   # Python only
+git clone -b ros1 https://github.com/pairs-lab/pairs_softuav_simulation.git   # ROS 1
+git clone -b ros2 https://github.com/pairs-lab/pairs_softuav_simulation.git   # ROS 2
+```
+
 ## Structure
 
 ```
