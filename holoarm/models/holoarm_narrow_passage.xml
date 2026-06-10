@@ -1,0 +1,131 @@
+<mujoco model="HoLoArm Narrow Gap Test - V Shape">
+  <compiler angle="radian"/>
+  <option timestep="0.002" gravity="0 0 -9.81"/>
+
+  <default>
+    <geom friction="0.1 0.05 0.01" solref="0.02 1"/>
+    <joint limited="true"/>
+  </default>
+
+  <asset>
+    <texture name="grid" type="2d" builtin="checker" rgb1="0.2 0.3 0.4" rgb2="0.1 0.2 0.3" width="512" height="512" mark="edge"/>
+    <material name="gridmat" texture="grid" texuniform="true" texrepeat="5 5" reflectance="0.2"/>
+    <material name="wood" rgba="0.8 0.6 0.4 0.8"/>
+  </asset>
+
+  <worldbody>
+    <light name="light" pos="0 0 3"/>
+    <geom name="floor" type="plane" size="0 0 0.05" material="gridmat"/>
+
+    <body name="wall_left_v" pos="2.3 0.5 1.0" euler="0 0 -0.5">
+      <geom type="box" size="0.6 0.05 1.0" material="wood" friction="0.01 0.01 0.01"/>
+    </body>
+    
+    <body name="wall_right_v" pos="2.3 -0.5 1.0" euler="0 0 0.5">
+      <geom type="box" size="0.6 0.05 1.0" material="wood" friction="0.01 0.01 0.01"/>
+    </body>
+
+    <body name="holoarm_core" pos="0 0 1.0">
+      <freejoint name="drone_freejoint"/>
+      <geom type="box" size="0.06 0.06 0.02" mass="0.41" rgba="0.2 0.2 0.2 1"/>
+      <site name="imu" pos="0 0 0"/>
+
+      <body name="fl_base" pos="0.054 0.065 0" euler="0 0 0.8723">
+        <geom type="box" size="0.008 0.012 0.012" pos="-0.008 0 0" rgba="0.4 0.4 0.4 1" mass="0.01"/>
+        <geom type="cylinder" size="0.012 0.003" pos="0.003 0 0" euler="0 1.5708 0" rgba="0.9 0.4 0.1 1" mass="0.005"/>
+        <geom type="cylinder" size="0.012 0.003" pos="0.037 0 0" euler="0 1.5708 0" rgba="0.9 0.4 0.1 1" mass="0.005"/>
+        <geom type="ellipsoid" size="0.018 0.003 0.004" pos="0.02 0 0.014" rgba="0.9 0.4 0.1 1"/>
+        <geom type="ellipsoid" size="0.018 0.003 0.004" pos="0.02 0 -0.014" rgba="0.9 0.4 0.1 1"/>
+        <geom type="ellipsoid" size="0.018 0.004 0.003" pos="0.02 0.014 0" rgba="0.9 0.4 0.1 1"/>
+        <geom type="ellipsoid" size="0.018 0.004 0.003" pos="0.02 -0.014 0" rgba="0.9 0.4 0.1 1"/>
+
+        <joint name="fl_bend_pitch" type="hinge" axis="0 1 0" stiffness="1.0" damping="0.5" range="-1.2 1.2"/>
+        <joint name="fl_bend_yaw" type="hinge" axis="0 0 1" stiffness="1.0" damping="0.5" range="-1.2 1.2"/>
+        
+        <body name="fl_arm_sliding" pos="0 0 0">
+          <joint name="fl_slide" type="slide" axis="1 0 0" stiffness="800" damping="15" range="-0.04 0.04 "/>
+          <geom type="capsule" size="0.008 0.068" pos="0.068 0 0" euler="0 1.5708 0" mass="0.07" rgba="0.8 0.8 0.8 1"/>
+          <body name="fl_motor" pos="0.136 0 0">
+            <geom type="cylinder" size="0.04 0.005" mass="0.04" rgba="0.1 0.1 0.8 0.8"/>
+            <geom type="cylinder" size="0.05 0.004" mass="0.01" rgba="0.8 0.8 0.8 0.3" friction="0.01 0.01 0.01" contype="0" conaffinity="0"/>
+            <site name="thrust_fl" pos="0 0 0"/>
+          </body>
+        </body>
+      </body>
+
+      <body name="fr_base" pos="0.054 -0.065 0" euler="0 0 -0.8723">
+        <geom type="box" size="0.008 0.012 0.012" pos="-0.008 0 0" rgba="0.4 0.4 0.4 1" mass="0.01"/>
+        <geom type="cylinder" size="0.012 0.003" pos="0.003 0 0" euler="0 1.5708 0" rgba="0.9 0.4 0.1 1" mass="0.005"/>
+        <geom type="cylinder" size="0.012 0.003" pos="0.037 0 0" euler="0 1.5708 0" rgba="0.9 0.4 0.1 1" mass="0.005"/>
+        <geom type="ellipsoid" size="0.018 0.003 0.004" pos="0.02 0 0.014" rgba="0.9 0.4 0.1 1"/>
+        <geom type="ellipsoid" size="0.018 0.003 0.004" pos="0.02 0 -0.014" rgba="0.9 0.4 0.1 1"/>
+        <geom type="ellipsoid" size="0.018 0.004 0.003" pos="0.02 0.014 0" rgba="0.9 0.4 0.1 1"/>
+        <geom type="ellipsoid" size="0.018 0.004 0.003" pos="0.02 -0.014 0" rgba="0.9 0.4 0.1 1"/>
+
+        <joint name="fr_bend_pitch" type="hinge" axis="0 1 0" stiffness="1.0" damping="0.5" range="-0.55 0.55"/>
+        <joint name="fr_bend_yaw" type="hinge" axis="0 0 1" stiffness="1.0" damping="0.5" range="-0.55 0.55"/>
+        <body name="fr_arm_sliding" pos="0 0 0">
+          <joint name="fr_slide" type="slide" axis="1 0 0" stiffness="800" damping="15" range="-0.04 0.04"/>
+          <geom type="capsule" size="0.008 0.068" pos="0.068 0 0" euler="0 1.5708 0" mass="0.07" rgba="0.8 0.8 0.8 1"/>
+          <body name="fr_motor" pos="0.136 0 0">
+            <geom type="cylinder" size="0.04 0.005" mass="0.04" rgba="0.8 0.1 0.1 0.8"/>
+            <geom type="cylinder" size="0.05 0.004" mass="0.01" rgba="0.8 0.8 0.8 0.3" friction="0.01 0.01 0.01" contype="0" conaffinity="0"/>
+            <site name="thrust_fr" pos="0 0 0"/>
+          </body>
+        </body>
+      </body>
+
+      <body name="rl_base" pos="-0.054 0.065 0" euler="0 0 2.2693">
+        <geom type="box" size="0.008 0.012 0.012" pos="-0.008 0 0" rgba="0.4 0.4 0.4 1" mass="0.01"/>
+        <geom type="cylinder" size="0.012 0.003" pos="0.003 0 0" euler="0 1.5708 0" rgba="0.9 0.4 0.1 1" mass="0.005"/>
+        <geom type="cylinder" size="0.012 0.003" pos="0.037 0 0" euler="0 1.5708 0" rgba="0.9 0.4 0.1 1" mass="0.005"/>
+        <geom type="ellipsoid" size="0.018 0.003 0.004" pos="0.02 0 0.014" rgba="0.9 0.4 0.1 1"/>
+        <geom type="ellipsoid" size="0.018 0.003 0.004" pos="0.02 0 -0.014" rgba="0.9 0.4 0.1 1"/>
+        <geom type="ellipsoid" size="0.018 0.004 0.003" pos="0.02 0.014 0" rgba="0.9 0.4 0.1 1"/>
+        <geom type="ellipsoid" size="0.018 0.004 0.003" pos="0.02 -0.014 0" rgba="0.9 0.4 0.1 1"/>
+
+        <joint name="rl_bend_pitch" type="hinge" axis="0 1 0" stiffness="1.0" damping="0.5" range="-0.55 0.55"/>
+        <joint name="rl_bend_yaw" type="hinge" axis="0 0 1" stiffness="1.0" damping="0.5" range="-0.55 0.55"/>
+        <body name="rl_arm_sliding" pos="0 0 0">
+          <joint name="rl_slide" type="slide" axis="1 0 0" stiffness="800" damping="15" range="-0.04 0.04"/>
+          <geom type="capsule" size="0.008 0.068" pos="0.068 0 0" euler="0 1.5708 0" mass="0.07" rgba="0.8 0.8 0.8 1"/>
+          <body name="rl_motor" pos="0.136 0 0">
+             <geom type="cylinder" size="0.04 0.005" mass="0.04" rgba="0.1 0.1 0.8 0.8"/>
+             <geom type="cylinder" size="0.05 0.004" mass="0.01" rgba="0.8 0.8 0.8 0.3" friction="0.01 0.01 0.01" contype="0" conaffinity="0"/>
+            <site name="thrust_rl" pos="0 0 0"/>
+          </body>
+        </body>
+      </body>
+
+      <body name="rr_base" pos="-0.054 -0.065 0" euler="0 0 -2.2693">
+        <geom type="box" size="0.008 0.012 0.012" pos="-0.008 0 0" rgba="0.4 0.4 0.4 1" mass="0.01"/>
+        <geom type="cylinder" size="0.012 0.003" pos="0.003 0 0" euler="0 1.5708 0" rgba="0.9 0.4 0.1 1" mass="0.005"/>
+        <geom type="cylinder" size="0.012 0.003" pos="0.037 0 0" euler="0 1.5708 0" rgba="0.9 0.4 0.1 1" mass="0.005"/>
+        <geom type="ellipsoid" size="0.018 0.003 0.004" pos="0.02 0 0.014" rgba="0.9 0.4 0.1 1"/>
+        <geom type="ellipsoid" size="0.018 0.003 0.004" pos="0.02 0 -0.014" rgba="0.9 0.4 0.1 1"/>
+        <geom type="ellipsoid" size="0.018 0.004 0.003" pos="0.02 0.014 0" rgba="0.9 0.4 0.1 1"/>
+        <geom type="ellipsoid" size="0.018 0.004 0.003" pos="0.02 -0.014 0" rgba="0.9 0.4 0.1 1"/>
+
+        <joint name="rr_bend_pitch" type="hinge" axis="0 1 0" stiffness="1.0" damping="0.5" range="-1.2 1.2"/>
+        <joint name="rr_bend_yaw" type="hinge" axis="0 0 1" stiffness="1.0" damping="0.5" range="-1.2 1.2"/>
+        <body name="rr_arm_sliding" pos="0 0 0">
+          <joint name="rr_slide" type="slide" axis="1 0 0" stiffness="800" damping="15" range="-0.04 0.04"/>
+          <geom type="capsule" size="0.008 0.068" pos="0.068 0 0" euler="0 1.5708 0" mass="0.07" rgba="0.8 0.8 0.8 1"/>
+          <body name="rr_motor" pos="0.136 0 0">
+            <geom type="cylinder" size="0.04 0.005" mass="0.04" rgba="0.8 0.1 0.1 0.8"/>
+            <geom type="cylinder" size="0.05 0.004" mass="0.01" rgba="0.8 0.8 0.8 0.3" friction="0.01 0.01 0.01" contype="0" conaffinity="0"/>
+            <site name="thrust_rr" pos="0 0 0"/>
+          </body>
+        </body>
+      </body>
+
+    </body> 
+  </worldbody>
+  
+  <actuator>
+    <general name="motor_fl" site="thrust_fl" gear="0 0 1 0 0 -0.02" ctrlrange="0 10"/>
+    <general name="motor_fr" site="thrust_fr" gear="0 0 1 0 0  0.02" ctrlrange="0 10"/>
+    <general name="motor_rl" site="thrust_rl" gear="0 0 1 0 0  0.02" ctrlrange="0 10"/>
+    <general name="motor_rr" site="thrust_rr" gear="0 0 1 0 0 -0.02" ctrlrange="0 10"/>
+  </actuator>
+</mujoco>

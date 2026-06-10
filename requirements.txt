@@ -1,0 +1,6 @@
+# Python dependencies for the soft drone MuJoCo simulations.
+# Install with:  pip install -r requirements.txt
+mujoco>=3.0
+numpy>=1.24
+simple-pid>=2.0
+pynput>=1.7

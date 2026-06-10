@@ -1,0 +1,20 @@
+# Python
+__pycache__/
+*.py[cod]
+*.so
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Downloaded robot models (fetched at setup time, not version controlled)
+skydio_x2/models/mujoco_menagerie-main/
+
+# Simulation output
+*.pkl
+
+# Editor / OS
+.vscode/
+.idea/
+.DS_Store

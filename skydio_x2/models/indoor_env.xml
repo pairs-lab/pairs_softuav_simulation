@@ -1,0 +1,324 @@
+
+<mujoco model="indoor_drone_navigation">
+  <!-- include Skydio X2 drone model -->
+  <include file="mujoco_menagerie-main/skydio_x2/x2.xml"/>
+
+  <!-- house environment -->
+  <compiler angle="radian" autolimits="true"
+            assetdir="mujoco_menagerie-main/skydio_x2/assets"/>
+  <option timestep="0.01"
+          gravity="0 0 -9.81"
+          density="1.225"
+          viscosity="1.8e-5"/>
+
+  <!-- visual -->
+  <visual>
+    <headlight diffuse="0.6 0.6 0.6" ambient="0.35 0.35 0.35" specular="0 0 0"/>
+    <rgba haze="0.15 0.2 0.25 1"/>
+    <global offwidth="1920" offheight="1080" fovy="60"/>
+    <quality shadowsize="4096"/>
+  </visual>
+
+  <!-- assets -->
+  <asset>
+    <!-- Textures -->
+    <texture name="tex_floor"   type="2d" builtin="checker"
+             rgb1="0.88 0.88 0.88" rgb2="0.76 0.76 0.76" width="512" height="512"/>
+    <texture name="tex_wall"    type="2d" builtin="flat"
+             rgb1="0.93 0.89 0.84" width="256" height="256"/>
+    <texture name="tex_wood"    type="2d" builtin="flat"
+             rgb1="0.62 0.43 0.22" width="256" height="256"/>
+    <texture name="tex_sky"     type="skybox" builtin="gradient"
+             rgb1="0.4 0.6 0.8"   rgb2="0.1 0.1 0.2" width="512" height="512"/>
+
+    <!-- Materials -->
+    <material name="mat_floor"   texture="tex_floor" texrepeat="4 4"  reflectance="0.08"/>
+    <material name="mat_wall"    texture="tex_wall"                   reflectance="0.05"/>
+    <material name="mat_wood"    texture="tex_wood"                   reflectance="0.10"/>
+    <material name="mat_metal"   rgba="0.55 0.55 0.60 1"              reflectance="0.35"/>
+    <material name="mat_dark"    rgba="0.18 0.13 0.10 1"              reflectance="0.05"/>
+    <material name="mat_white"   rgba="0.96 0.96 0.96 1"              reflectance="0.12"/>
+    <material name="mat_glass"   rgba="0.7  0.85 0.95 0.35"           reflectance="0.40"/>
+    <material name="mat_fabric"  rgba="0.42 0.36 0.60 1"              reflectance="0.03"/>
+    <material name="mat_tile"    rgba="0.82 0.82 0.85 1"              reflectance="0.20"/>
+  </asset>
+
+  <!-- world body -->
+  <worldbody>
+    <light name="light_living"  pos="3.0 5.0 2.95" dir="0 0 -1"
+           diffuse="0.90 0.90 0.85" specular="0.2 0.2 0.2" castshadow="true"/>
+    <light name="light_bedroom" pos="11.0 7.5 2.95" dir="0 0 -1"
+           diffuse="0.80 0.80 0.80" specular="0.1 0.1 0.1" castshadow="true"/>
+    <light name="light_kitchen" pos="11.0 3.5 2.95" dir="0 0 -1"
+           diffuse="0.85 0.85 0.80" specular="0.1 0.1 0.1" castshadow="false"/>
+    <light name="light_hall"    pos="7.0 5.0 2.95" dir="0 0 -1"
+           diffuse="0.70 0.70 0.70" specular="0.0 0.0 0.0" castshadow="false"/>
+
+    <!-- floor-->
+    <geom name="floor"
+          type="plane" pos="7 5 0" size="8 6 0.1"
+          material="mat_floor" friction="1.0 0.005 0.0001"
+          contype="1" conaffinity="1"/>
+
+    <!-- wall -->
+    <geom name="wall_south" type="box" pos="7 -0.1 1.5" size="7.1 0.10 1.50" material="mat_wall"/>
+    <geom name="wall_north" type="box" pos="7 10.1 1.5" size="7.1 0.10 1.50" material="mat_wall"/>
+    <geom name="wall_west"  type="box" pos="-0.1 5 1.5" size="0.10 5.10 1.50" material="mat_wall"/>
+    <geom name="wall_east"  type="box" pos="14.1 5 1.5" size="0.10 5.10 1.50" material="mat_wall"/>
+
+    <!-- partition walls -->
+    <geom name="part_lv_hall_s"
+          type="box" pos="6.0 1.80 1.50" size="0.10 1.80 1.50" material="mat_wall"/>
+    <geom name="part_lv_hall_lintel"
+          type="box" pos="6.0 4.20 2.55" size="0.10 0.60 0.45" material="mat_wall"/>
+    <geom name="part_lv_hall_n"
+          type="box" pos="6.0 7.40 1.50" size="0.10 2.60 1.50" material="mat_wall"/>
+    <geom name="part_hall_bed_s"
+          type="box" pos="8.0 5.40 1.50" size="0.10 0.40 1.50" material="mat_wall"/>
+    <geom name="part_hall_bed_lintel"
+          type="box" pos="8.0 6.40 2.55" size="0.10 0.60 0.45" material="mat_wall"/>
+    <geom name="part_hall_bed_n"
+          type="box" pos="8.0 8.50 1.50" size="0.10 1.50 1.50" material="mat_wall"/>
+    <geom name="part_hall_kit_s"
+          type="box" pos="8.0 0.75 1.50" size="0.10 0.75 1.50" material="mat_wall"/>
+    <geom name="part_hall_kit_lintel"
+          type="box" pos="8.0 2.10 2.55" size="0.10 0.60 0.45" material="mat_wall"/>
+    <geom name="part_hall_kit_n"
+          type="box" pos="8.0 3.85 1.50" size="0.10 1.15 1.50" material="mat_wall"/>
+    <geom name="part_bed_kit"
+          type="box" pos="11.0 5.0 1.50" size="3.00 0.10 1.50" material="mat_wall"/>
+    <geom name="part_kit_wc_w"
+          type="box" pos="8.70 2.0 1.50" size="0.70 0.10 1.50" material="mat_wall"/>
+    <geom name="part_kit_wc_lintel"
+          type="box" pos="10.0 2.0 2.55" size="0.60 0.10 0.45" material="mat_wall"/>
+    <geom name="part_kit_wc_e"
+          type="box" pos="12.30 2.0 1.50" size="1.70 0.10 1.50" material="mat_wall"/>
+
+    <!-- sofa -->
+    <geom name="sofa_seat"       type="box" pos="2.0 8.8 0.42" size="1.30 0.50 0.22" material="mat_fabric"/>
+    <geom name="sofa_back"       type="box" pos="2.0 9.55 0.75" size="1.30 0.18 0.55" material="mat_fabric"/>
+    <geom name="sofa_arm_l"      type="box" pos="0.55 9.05 0.60" size="0.15 0.50 0.40" material="mat_fabric"/>
+    <geom name="sofa_arm_r"      type="box" pos="3.45 9.05 0.60" size="0.15 0.50 0.40" material="mat_fabric"/>
+    <geom name="sofa_leg_fl"     type="cylinder" pos="0.75 8.35 0.07" size="0.04 0.07" material="mat_metal"/>
+    <geom name="sofa_leg_fr"     type="cylinder" pos="3.25 8.35 0.07" size="0.04 0.07" material="mat_metal"/>
+    <geom name="sofa_leg_rl"     type="cylinder" pos="0.75 9.45 0.07" size="0.04 0.07" material="mat_metal"/>
+    <geom name="sofa_leg_rr"     type="cylinder" pos="3.25 9.45 0.07" size="0.04 0.07" material="mat_metal"/>
+
+    <!-- armchair -->
+    <geom name="armchair_seat"   type="box" pos="4.8 8.5 0.42" size="0.50 0.50 0.22" material="mat_fabric"/>
+    <geom name="armchair_back"   type="box" pos="4.8 9.15 0.72" size="0.50 0.18 0.50" material="mat_fabric"/>
+    <geom name="armchair_arm_l"  type="box" pos="4.15 8.65 0.58" size="0.12 0.50 0.38" material="mat_fabric"/>
+    <geom name="armchair_arm_r"  type="box" pos="5.45 8.65 0.58" size="0.12 0.50 0.38" material="mat_fabric"/>
+
+    <!-- coffee table -->
+    <geom name="ctable_top"      type="box" pos="2.2 7.2 0.45" size="0.80 0.45 0.04" material="mat_wood"/>
+    <geom name="ctable_shelf"    type="box" pos="2.2 7.2 0.22" size="0.72 0.38 0.02" material="mat_wood"/>
+    <geom name="ctable_leg_fl"   type="box" pos="1.48 6.82 0.22" size="0.05 0.05 0.22" material="mat_metal"/>
+    <geom name="ctable_leg_fr"   type="box" pos="2.92 6.82 0.22" size="0.05 0.05 0.22" material="mat_metal"/>
+    <geom name="ctable_leg_rl"   type="box" pos="1.48 7.58 0.22" size="0.05 0.05 0.22" material="mat_metal"/>
+    <geom name="ctable_leg_rr"   type="box" pos="2.92 7.58 0.22" size="0.05 0.05 0.22" material="mat_metal"/>
+
+    <!-- TV stand -->
+    <geom name="tv_stand_body"   type="box" pos="2.0 0.35 0.30" size="1.60 0.28 0.30" material="mat_dark"/>
+    <geom name="tv_stand_door"   type="box" pos="1.20 0.30 0.18" size="0.55 0.25 0.18" rgba="0.22 0.16 0.12 1"/>
+    <geom name="tv_stand_door2"  type="box" pos="2.80 0.30 0.18" size="0.55 0.25 0.18" rgba="0.22 0.16 0.12 1"/>
+    <geom name="tv_screen"       type="box" pos="2.0 0.28 1.10" size="0.90 0.06 0.55" rgba="0.04 0.04 0.06 1"/>
+    <geom name="tv_stand_frame"  type="box" pos="2.0 0.30 1.10" size="0.94 0.05 0.57" rgba="0.15 0.15 0.15 1"/>
+
+    <!-- dining table -->
+    <geom name="dtable_top"      type="box" pos="3.5 4.0 0.78" size="0.90 0.55 0.04" material="mat_wood"/>
+    <geom name="dtable_leg_fl"   type="box" pos="2.68 3.53 0.38" size="0.06 0.06 0.38" material="mat_wood"/>
+    <geom name="dtable_leg_fr"   type="box" pos="4.32 3.53 0.38" size="0.06 0.06 0.38" material="mat_wood"/>
+    <geom name="dtable_leg_rl"   type="box" pos="2.68 4.47 0.38" size="0.06 0.06 0.38" material="mat_wood"/>
+    <geom name="dtable_leg_rr"   type="box" pos="4.32 4.47 0.38" size="0.06 0.06 0.38" material="mat_wood"/>
+
+    <!-- dining chairs -->
+    <geom name="dc1_seat"        type="box" pos="2.15 4.0 0.48" size="0.23 0.23 0.04" material="mat_wood"/>
+    <geom name="dc1_back"        type="box" pos="2.15 4.35 0.75" size="0.23 0.04 0.30" material="mat_wood"/>
+    <geom name="dc1_leg_fl"      type="cylinder" pos="1.97 3.82 0.23" size="0.03 0.23" material="mat_wood"/>
+    <geom name="dc1_leg_fr"      type="cylinder" pos="2.33 3.82 0.23" size="0.03 0.23" material="mat_wood"/>
+    <geom name="dc1_leg_rl"      type="cylinder" pos="1.97 4.18 0.23" size="0.03 0.23" material="mat_wood"/>
+    <geom name="dc1_leg_rr"      type="cylinder" pos="2.33 4.18 0.23" size="0.03 0.23" material="mat_wood"/>
+    <!-- chair 2-->
+    <geom name="dc2_seat"        type="box" pos="4.85 4.0 0.48" size="0.23 0.23 0.04" material="mat_wood"/>
+    <geom name="dc2_back"        type="box" pos="4.85 3.65 0.75" size="0.23 0.04 0.30" material="mat_wood"/>
+    <geom name="dc2_leg_fl"      type="cylinder" pos="4.67 3.82 0.23" size="0.03 0.23" material="mat_wood"/>
+    <geom name="dc2_leg_fr"      type="cylinder" pos="5.03 3.82 0.23" size="0.03 0.23" material="mat_wood"/>
+    <geom name="dc2_leg_rl"      type="cylinder" pos="4.67 4.18 0.23" size="0.03 0.23" material="mat_wood"/>
+    <geom name="dc2_leg_rr"      type="cylinder" pos="5.03 4.18 0.23" size="0.03 0.23" material="mat_wood"/>
+    <!-- chair 3 -->
+    <geom name="dc3_seat"        type="box" pos="3.5 2.85 0.48" size="0.23 0.23 0.04" material="mat_wood"/>
+    <geom name="dc3_back"        type="box" pos="3.5 2.50 0.75" size="0.23 0.04 0.30" material="mat_wood"/>
+    <geom name="dc3_leg_fl"      type="cylinder" pos="3.32 2.67 0.23" size="0.03 0.23" material="mat_wood"/>
+    <geom name="dc3_leg_fr"      type="cylinder" pos="3.68 2.67 0.23" size="0.03 0.23" material="mat_wood"/>
+    <geom name="dc3_leg_rl"      type="cylinder" pos="3.32 3.03 0.23" size="0.03 0.23" material="mat_wood"/>
+    <geom name="dc3_leg_rr"      type="cylinder" pos="3.68 3.03 0.23" size="0.03 0.23" material="mat_wood"/>
+    <!-- chair 4 -->
+    <geom name="dc4_seat"        type="box" pos="3.5 5.15 0.48" size="0.23 0.23 0.04" material="mat_wood"/>
+    <geom name="dc4_back"        type="box" pos="3.5 5.50 0.75" size="0.23 0.04 0.30" material="mat_wood"/>
+    <geom name="dc4_leg_fl"      type="cylinder" pos="3.32 4.97 0.23" size="0.03 0.23" material="mat_wood"/>
+    <geom name="dc4_leg_fr"      type="cylinder" pos="3.68 4.97 0.23" size="0.03 0.23" material="mat_wood"/>
+    <geom name="dc4_leg_rl"      type="cylinder" pos="3.32 5.33 0.23" size="0.03 0.23" material="mat_wood"/>
+    <geom name="dc4_leg_rr"      type="cylinder" pos="3.68 5.33 0.23" size="0.03 0.23" material="mat_wood"/>
+
+    <!-- bookshelf -->
+    <geom name="bookshelf_body"  type="box" pos="0.23 2.0 1.10" size="0.23 1.00 1.10" material="mat_wood"/>
+    <geom name="bs_plank_1"      type="box" pos="0.23 2.0 0.35" size="0.20 0.96 0.02" material="mat_wood"/>
+    <geom name="bs_plank_2"      type="box" pos="0.23 2.0 0.72" size="0.20 0.96 0.02" material="mat_wood"/>
+    <geom name="bs_plank_3"      type="box" pos="0.23 2.0 1.10" size="0.20 0.96 0.02" material="mat_wood"/>
+    <geom name="bs_plank_4"      type="box" pos="0.23 2.0 1.48" size="0.20 0.96 0.02" material="mat_wood"/>
+    <!-- books -->
+    <geom name="books_1"         type="box" pos="0.10 1.35 0.55" size="0.05 0.55 0.17" rgba="0.7 0.2 0.2 1"/>
+    <geom name="books_2"         type="box" pos="0.10 1.35 0.93" size="0.05 0.42 0.17" rgba="0.2 0.5 0.7 1"/>
+
+    <!-- cabinet -->
+    <geom name="cabinet_lv"      type="box" pos="0.35 6.5 0.85" size="0.35 0.55 0.85" material="mat_dark"/>
+    <geom name="cabinet_lv_d1"   type="box" pos="0.30 6.05 0.50" size="0.28 0.02 0.40" rgba="0.22 0.16 0.12 1"/>
+    <geom name="cabinet_lv_d2"   type="box" pos="0.30 6.95 0.50" size="0.28 0.02 0.40" rgba="0.22 0.16 0.12 1"/>
+    <geom name="cabinet_top_obj" type="sphere" pos="0.35 6.5 1.80" size="0.12" rgba="0.55 0.35 0.2 1"/>
+
+    <!-- plant -->
+    <geom name="plant_pot_1"     type="cylinder" pos="5.5 9.7 0.28" size="0.20 0.28" rgba="0.55 0.37 0.22 1"/>
+    <geom name="plant_tree_1"    type="capsule" pos="5.5 9.7 0.85" size="0.08 0.35" rgba="0.15 0.48 0.15 1"/>
+    <geom name="plant_top_1"     type="ellipsoid" pos="5.5 9.7 1.45" size="0.35 0.35 0.45" rgba="0.12 0.52 0.14 1"/>
+    <geom name="plant_pot_2"     type="cylinder" pos="0.25 9.7 0.22" size="0.16 0.22" rgba="0.60 0.40 0.25 1"/>
+    <geom name="plant_tree_2"    type="sphere" pos="0.25 9.7 0.72" size="0.32" rgba="0.10 0.45 0.12 1"/>
+
+    <!-- rug -->
+    <geom name="rug"             type="box" pos="2.2 7.5 0.005" size="1.60 1.20 0.005"
+          rgba="0.50 0.30 0.55 0.9" contype="0" conaffinity="0"/>
+
+    <!-- Bedroom – x∈[8,14], y∈[5,10] -->
+    <!-- double bed -->
+    <geom name="bed_frame"       type="box" pos="11.0 8.8 0.28" size="1.05 0.85 0.28" material="mat_wood"/>
+    <geom name="bed_mattress"    type="box" pos="11.0 8.8 0.60" size="0.98 0.78 0.18" material="mat_white"/>
+    <geom name="bed_blanket"     type="box" pos="11.0 8.6 0.80" size="0.96 0.65 0.06" rgba="0.55 0.42 0.65 1"/>
+    <geom name="bed_pillow_l"    type="box" pos="10.35 8.15 0.82" size="0.28 0.32 0.09" material="mat_white"/>
+    <geom name="bed_pillow_r"    type="box" pos="11.65 8.15 0.82" size="0.28 0.32 0.09" material="mat_white"/>
+    <geom name="bed_headboard"   type="box" pos="11.0 9.82 1.00" size="1.02 0.12 0.72" material="mat_wood"/>
+    <geom name="bed_leg_fl"      type="box"  pos="10.02 7.97 0.12" size="0.06 0.06 0.12" material="mat_wood"/>
+    <geom name="bed_leg_fr"      type="box"  pos="11.98 7.97 0.12" size="0.06 0.06 0.12" material="mat_wood"/>
+
+    <!-- bedside tables -->
+    <geom name="bs_table_l"      type="box" pos="9.60 8.8 0.38" size="0.28 0.28 0.38" material="mat_wood"/>
+    <geom name="bs_table_r"      type="box" pos="12.40 8.8 0.38" size="0.28 0.28 0.38" material="mat_wood"/>
+    <geom name="lamp_l"          type="cylinder" pos="9.60 8.8 0.88" size="0.10 0.12" rgba="0.95 0.92 0.80 1"/>
+    <geom name="lamp_r"          type="cylinder" pos="12.40 8.8 0.88" size="0.10 0.12" rgba="0.95 0.92 0.80 1"/>
+
+    <!-- wardrobe -->
+    <geom name="wardrobe_body"   type="box" pos="8.60 8.2 1.30" size="0.58 0.90 1.30" material="mat_wood"/>
+    <geom name="wardrobe_door_l" type="box" pos="8.60 7.45 1.30" size="0.55 0.03 1.27" rgba="0.65 0.48 0.28 1"/>
+    <geom name="wardrobe_door_r" type="box" pos="8.60 8.95 1.30" size="0.55 0.03 1.27" rgba="0.65 0.48 0.28 1"/>
+    <geom name="wardrobe_handle1"type="cylinder" pos="8.15 7.72 1.30" size="0.015 0.10" material="mat_metal"/>
+    <geom name="wardrobe_handle2"type="cylinder" pos="8.15 8.68 1.30" size="0.015 0.10" material="mat_metal"/>
+
+    <!-- desk -->
+    <geom name="desk_top"        type="box" pos="13.65 7.0 0.78" size="0.32 0.85 0.04" material="mat_wood"/>
+    <geom name="desk_leg_fl"     type="box" pos="13.38 6.22 0.38" size="0.04 0.04 0.38" material="mat_wood"/>
+    <geom name="desk_leg_fr"     type="box" pos="13.92 6.22 0.38" size="0.04 0.04 0.38" material="mat_wood"/>
+    <geom name="desk_leg_rl"     type="box" pos="13.38 7.78 0.38" size="0.04 0.04 0.38" material="mat_wood"/>
+    <geom name="desk_leg_rr"     type="box" pos="13.92 7.78 0.38" size="0.04 0.04 0.38" material="mat_wood"/>
+    <geom name="monitor"         type="box" pos="13.65 7.0 1.15" size="0.02 0.35 0.25" rgba="0.05 0.05 0.07 1"/>
+    <!-- office chair -->
+    <geom name="desk_chair_seat" type="box" pos="12.8 7.0 0.50" size="0.24 0.24 0.05" material="mat_dark"/>
+    <geom name="desk_chair_back" type="box" pos="12.8 7.30 0.80" size="0.24 0.06 0.32" material="mat_dark"/>
+    <geom name="desk_chair_pole" type="cylinder" pos="12.8 7.0 0.25" size="0.04 0.25" material="mat_metal"/>
+
+    <!-- dresser -->
+    <geom name="dresser_body"    type="box" pos="13.70 5.55 0.55" size="0.26 0.52 0.55" material="mat_wood"/>
+    <geom name="dresser_drawer1" type="box" pos="13.70 5.55 0.22" size="0.24 0.48 0.16" rgba="0.65 0.48 0.28 1"/>
+    <geom name="dresser_drawer2" type="box" pos="13.70 5.55 0.54" size="0.24 0.48 0.16" rgba="0.65 0.48 0.28 1"/>
+
+    <!-- Kitchen – x∈[8,14], y∈[2,5] -->
+    <!-- counter -->
+    <geom name="counter_s_body"  type="box" pos="10.5 2.40 0.47" size="2.00 0.35 0.47" material="mat_wood"/>
+    <geom name="counter_s_top"   type="box" pos="10.5 2.40 0.96" size="2.05 0.38 0.03" material="mat_tile"/>
+    <!-- counter -->
+    <geom name="counter_e_body"  type="box" pos="13.65 3.55 0.47" size="0.32 1.20 0.47" material="mat_wood"/>
+    <geom name="counter_e_top"   type="box" pos="13.65 3.55 0.96" size="0.35 1.25 0.03" material="mat_tile"/>
+    <!-- kitchen sink -->
+    <geom name="ksink_basin"     type="box" pos="11.8 2.38 0.97" size="0.30 0.22 0.08" rgba="0.75 0.78 0.80 1"/>
+    <!-- stove -->
+    <geom name="stove_top"       type="box" pos="10.0 2.38 0.96" size="0.40 0.28 0.02" rgba="0.25 0.25 0.28 1"/>
+    <geom name="burner_1"        type="cylinder" pos="9.72 2.25 0.985" size="0.10 0.015" rgba="0.15 0.15 0.15 1"/>
+    <geom name="burner_2"        type="cylinder" pos="10.28 2.25 0.985" size="0.10 0.015" rgba="0.15 0.15 0.15 1"/>
+    <geom name="burner_3"        type="cylinder" pos="9.72 2.51 0.985" size="0.10 0.015" rgba="0.15 0.15 0.15 1"/>
+    <geom name="burner_4"        type="cylinder" pos="10.28 2.51 0.985" size="0.10 0.015" rgba="0.15 0.15 0.15 1"/>
+
+    <!-- refrigerator -->
+    <geom name="fridge_body"     type="box" pos="8.38 2.50 0.98" size="0.35 0.48 0.98" rgba="0.88 0.88 0.90 1"/>
+    <geom name="fridge_handle"   type="cylinder" pos="8.18 2.30 1.35" size="0.025 0.30" material="mat_metal"/>
+    <geom name="fridge_trim"     type="box" pos="8.38 2.50 1.00" size="0.33 0.46 0.02" rgba="0.70 0.70 0.72 1"/>
+
+    <!-- microwave -->
+    <geom name="microwave"       type="box" pos="13.65 3.0 1.20" size="0.22 0.18 0.15" rgba="0.20 0.20 0.22 1"/>
+
+    <!-- kitchen table + 2 stools -->
+    <geom name="kit_table_top"   type="box" pos="10.5 4.20 0.78" size="0.70 0.42 0.04" material="mat_wood"/>
+    <geom name="kit_table_leg_fl"type="box" pos="9.88 3.85 0.38" size="0.05 0.05 0.38" material="mat_wood"/>
+    <geom name="kit_table_leg_fr"type="box" pos="11.12 3.85 0.38" size="0.05 0.05 0.38" material="mat_wood"/>
+    <geom name="kit_table_leg_rl"type="box" pos="9.88 4.55 0.38" size="0.05 0.05 0.38" material="mat_wood"/>
+    <geom name="kit_table_leg_rr"type="box" pos="11.12 4.55 0.38" size="0.05 0.05 0.38" material="mat_wood"/>
+    <!-- bar stools -->
+    <geom name="stool_1_seat"    type="cylinder" pos="9.30 4.20 0.60" size="0.20 0.04" material="mat_wood"/>
+    <geom name="stool_1_pole"    type="cylinder" pos="9.30 4.20 0.30" size="0.04 0.30" material="mat_metal"/>
+    <geom name="stool_2_seat"    type="cylinder" pos="11.70 4.20 0.60" size="0.20 0.04" material="mat_wood"/>
+    <geom name="stool_2_pole"    type="cylinder" pos="11.70 4.20 0.30" size="0.04 0.30" material="mat_metal"/>
+
+    <!-- upper cabinets -->
+    <geom name="ucabinet_1"      type="box" pos="10.5 2.20 1.85" size="2.00 0.25 0.55" material="mat_wood"/>
+    <geom name="ucabinet_2"      type="box" pos="13.65 3.55 1.85" size="0.22 1.20 0.55" material="mat_wood"/>
+
+    <!-- Bathroom -->
+    <!-- bathtub -->
+    <geom name="bathtub_outer"   type="box" pos="12.5 1.0 0.38" size="0.60 0.90 0.38" material="mat_tile"/>
+    <geom name="bathtub_inner"   type="box" pos="12.5 1.0 0.50" size="0.48 0.78 0.26" material="mat_glass"/>
+    <geom name="bathtub_tap"     type="cylinder" pos="12.5 0.28 0.62" size="0.025 0.12" material="mat_metal"/>
+
+    <!-- toilet -->
+    <geom name="toilet_base"     type="box" pos="8.80 1.10 0.32" size="0.22 0.28 0.32" material="mat_white"/>
+    <geom name="toilet_tank"     type="box" pos="8.80 1.55 0.60" size="0.18 0.10 0.22" material="mat_white"/>
+    <geom name="toilet_seat"     type="box" pos="8.80 1.10 0.46" size="0.20 0.26 0.04" rgba="0.88 0.88 0.88 1"/>
+
+    <!-- sink -->
+    <geom name="lavabo_pedestal" type="cylinder" pos="10.80 0.42 0.45" size="0.12 0.45" material="mat_white"/>
+    <geom name="lavabo_basin"    type="box" pos="10.80 0.42 0.92" size="0.25 0.22 0.08" material="mat_white"/>
+    <geom name="lavabo_tap"      type="cylinder" pos="10.80 0.28 1.08" size="0.02 0.10" material="mat_metal"/>
+
+    <!-- mirror -->
+    <geom name="mirror"          type="box" pos="10.80 0.12 1.45" size="0.35 0.04 0.40" material="mat_glass"/>
+
+    <!-- towel rack -->
+    <geom name="towel_rack"      type="cylinder" pos="9.60 0.15 1.20" size="0.02 0.35" material="mat_metal"/>
+    <geom name="towel"           type="box" pos="9.60 0.15 1.22" size="0.28 0.05 0.28" rgba="0.6 0.8 0.9 1"/>
+
+    <!-- Hallway -->
+    <!-- shoe rack -->
+    <geom name="shoe_rack"       type="box" pos="7.0 0.60 0.38" size="0.35 0.50 0.38" material="mat_wood"/>
+    <geom name="shoe_rack_shelf" type="box" pos="7.0 0.60 0.22" size="0.32 0.46 0.02" material="mat_wood"/>
+
+    <!-- coat hooks -->
+    <geom name="hook_bar"        type="box" pos="6.18 9.0 1.65" size="0.05 0.60 0.04" material="mat_wood"/>
+    <geom name="hook_1"          type="cylinder" pos="6.15 8.55 1.55" size="0.02 0.10" material="mat_metal"/>
+    <geom name="hook_2"          type="cylinder" pos="6.15 9.00 1.55" size="0.02 0.10" material="mat_metal"/>
+    <geom name="hook_3"          type="cylinder" pos="6.15 9.45 1.55" size="0.02 0.10" material="mat_metal"/>
+
+    <!-- full-length mirror -->
+    <geom name="hallway_mirror"  type="box" pos="7.85 7.5 1.05" size="0.04 0.35 1.05" material="mat_glass"/>
+
+    <!-- plant -->
+    <geom name="hall_plant_pot"  type="cylinder" pos="7.0 4.8 0.22" size="0.15 0.22" rgba="0.55 0.38 0.22 1"/>
+    <geom name="hall_plant"      type="sphere" pos="7.0 4.8 0.65" size="0.28" rgba="0.14 0.50 0.16 1"/>
+
+    <!-- global cameras -->
+    <camera name="overview"   pos="7 -5 12" xyaxes="1 0 0  0 0.5 0.87" fovy="70"/>
+    <camera name="top_view"   pos="7  5 15" xyaxes="1 0 0  0 1 0"       fovy="75"/>
+    <camera name="living_cam" pos="3  5  4" xyaxes="1 0 0  0 0.3 0.95"  fovy="80"/>
+
+    <!-- indoor lighting for drone -->
+    <light name="light_drone_follow" mode="targetbodycom" target="x2"
+           pos="7 5 4" diffuse="0.5 0.5 0.5" specular="0.1 0.1 0.1"/>
+
+  </worldbody>
+
+</mujoco>
