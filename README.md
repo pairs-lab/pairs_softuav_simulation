@@ -48,6 +48,9 @@ You need Python 3.9+ (tested on 3.12) and a display for the viewer.
 Using [uv](https://github.com/astral-sh/uv) (recommended, no sudo):
 
 ```bash
+curl -LsSf https://astral.sh/uv/install.sh | sh
+source $HOME/.local/bin/env
+uv --version
 uv venv --python 3.12 .venv
 uv pip install --python .venv -r requirements.txt
 source .venv/bin/activate
