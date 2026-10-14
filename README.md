@@ -14,13 +14,30 @@ MuJoCo drone simulations with cascaded PID control. Two independent demos:
   Needs the external [`mujoco_menagerie`](https://github.com/google-deepmind/mujoco_menagerie)
   model (one extra download — see below).
 
+The repository also includes an illustrative simulation comparing soft- and rigid-frame drone responses to wall collisions under the chosen model assumptions.
+
+## Branches
+
+This repo is organized by runtime — clone the branch that matches your stack:
+
+| Branch | Contents |
+| --- | --- |
+| `main` | Standalone Python + MuJoCo demos, no ROS |
+| `ros1` | ROS 1 (catkin / rospy) wrapper node — **you are here** |
+| `ros2` | ROS 2 (ament_python / rclpy) wrapper node |
+
+```bash
+git clone -b ros1 https://github.com/pairs-lab/pairs_softuav_simulation.git   # ROS 1
+```
+
 ## Structure
 
 ```
 pairs_softuav_simulation/
 ├── holoarm/
-│   ├── models/                       # holoarm.xml + holoarm_narrow_passage.xml
-│   └── narrow_passage_test.py        # run this
+│   ├── models/                       # physics template + current visual assets
+│   ├── holoarm_narrow_passage_viewer.py # current interactive narrow-gap demo
+│   └── wall_collision_comparison.py  # headless soft-vs-rigid MP4 renderer
 ├── skydio_x2/
 │   ├── models/
 │   │   ├── indoor_env.xml            # house environment; includes the X2 model
@@ -54,11 +71,43 @@ pip install -r requirements.txt
 
 ## Run
 
+Soft-vs-rigid  behavior video:
+[speed_sweep_comparison.mp4](outputs/wall_collision_comparison/speed_sweep_comparison.mp4) illustrates wall impacts at 2–7.6 m/s, with HoLoArm-inspired soft-drone and X2-inspired rigid-drone visuals. The video highlights soft-arm deformation, post-impact motion, recovery, and simulated rigid-arm fracture. Model assumptions and limitations are documented in the [behavior notes](holoarm/RIGID_WALL_BEHAVIOR.md).
+
+
+To recreate this behavior video in a new output directory (requires `ffmpeg`):
+
+```bash
+MUJOCO_GL=egl python3 holoarm/rigid_offset_behavior_sweep.py \
+  --rigid-profile transient --output-dir outputs/wall_collision_comparison_new
+```
+
 HoloArm narrow-passage test — no extra setup:
 
 ```bash
-python holoarm/narrow_passage_test.py
+python3 holoarm/holoarm_narrow_passage_viewer.py
 ```
+
+The baseline renderer is also available separately from the behavior video
+above and requires `ffmpeg`:
+
+```bash
+# Render a single impact
+python holoarm/wall_collision_comparison.py --impact-speed 2.5 --duration 6
+
+# Render the full speed sweep to a new directory
+python holoarm/wall_collision_comparison.py --sweep \
+  --results-dir outputs/wall_collision_baseline
+```
+
+Use `--output /path/to/result.mp4` to set the single-video output path.
+The script automatically uses EGL when no desktop display is available.
+The speed sweep produces MP4 videos, CSV/JSON metrics, and plots.
+
+The visuals feature a HoLoArm-inspired soft frame and an X2-inspired rigid
+frame; they do not establish fidelity to either platform's real-world
+dynamics. See the
+[methodology and limitations](holoarm/WALL_COLLISION_STUDY.md).
 
 Skydio X2 indoor teleop — first fetch the drone model into `skydio_x2/models/`:
 

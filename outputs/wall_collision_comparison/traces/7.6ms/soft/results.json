@@ -1,0 +1,83 @@
+{
+  "config": {
+    "mass_kg": 0.97,
+    "timestep_s": 0.0005,
+    "settle_s": 0.8,
+    "approach_s": 0.35,
+    "post_impact_s": 7.0,
+    "altitude_m": 1.2,
+    "guard_radius_m": 0.105,
+    "yaw_stiffness_nm_rad": 0.45,
+    "yaw_damping_nms_rad": 0.15,
+    "pitch_stiffness_nm_rad": 18.0,
+    "pitch_damping_nms_rad": 0.16,
+    "slide_stiffness_n_m": 1000.0,
+    "slide_damping_ns_m": 8.0,
+    "slide_range_m": 0.004,
+    "bend_limit_deg": 80.0,
+    "rigid_failure_moment_nm": 110.0,
+    "rigid_failure_force_n": 2000.0,
+    "motor_time_constant_s": 0.04,
+    "max_motor_thrust_n": 7.8,
+    "contact_time_constant_s": 0.002,
+    "contact_damping_ratio": 1.0,
+    "wall_friction": 0.15,
+    "recovery_position_tolerance_m": 0.12,
+    "recovery_speed_tolerance_m_s": 0.25,
+    "recovery_tilt_tolerance_deg": 8.0,
+    "recovery_hold_s": 0.3,
+    "notes": "Reduced-order demonstration, not an identified HoLoArm digital twin. Mass, rotor geometry, motor delay, and axial stroke are informed by Pham et al. 2026. Joint stiffness/damping, collision solver parameters, and rigid fracture limits are explicit uncalibrated assumptions. The 7.6 m/s paper result includes drop tests and must not be treated as a wall-impact fracture threshold."
+  },
+  "visual": {
+    "soft": "Original HoLoArm-inspired white frame/guards, exposed electronics and curved orange ligaments",
+    "rigid": "Original X2-inspired artwork; not a Skydio X2 dynamics model",
+    "physics": "Same mass, inertia, contact geometry and fracture settings as the matched rigid baseline"
+  },
+  "results": [
+    {
+      "kind": "soft",
+      "requested_speed_m_s": 7.6,
+      "actual_impact_speed_m_s": 7.599999974662843,
+      "impact_time_s": 0.35100000000000026,
+      "peak_wall_force_n": 6237.664727001379,
+      "peak_horizontal_acceleration_m_s2": 10319.97394093064,
+      "first_impact_impulse_ns": 7.405050371557982,
+      "peak_10ms_mean_body_deceleration_m_s2": 640.9635927879207,
+      "peak_arm_contact_moment_nm": 148.55006266899585,
+      "peak_arm_contact_force_n": 3188.013131096278,
+      "peak_tilt_deg": 44.87043283050832,
+      "peak_bend_deg": 43.45826177474826,
+      "peak_compression_mm": 4.595164335683036,
+      "max_slide_limit_violation_mm": 0.5951643356830356,
+      "fracture_enabled": true,
+      "broken_arms": 0,
+      "failure_times_s": [],
+      "ground_contact_time_s": null,
+      "recovered": true,
+      "recovery_time_s": 4.15900000000022,
+      "final_position_m": [
+        -0.4504517217996456,
+        4.756190746924883e-10,
+        1.1999594824713593
+      ],
+      "final_speed_m_s": 0.0008790223092945178,
+      "wall_pitch_deg": 0,
+      "recovery_target_m": [
+        -0.45,
+        0.0,
+        1.2
+      ],
+      "altitude_drop_m": 0.7019434127602786,
+      "simulation_warning_count": 0,
+      "post_impact_retreat_m": 4.056515291290549,
+      "bank_start_s": 0.5139999999999988,
+      "bank_duration_s": 0.9,
+      "bank_reference_deg": 66.10000000000001,
+      "bank_is_control_maneuver": true,
+      "fl_peak_yaw_deg": 37.90812963103099,
+      "fl_contact_yaw_deg": 37.90812963103099,
+      "fr_peak_yaw_deg": 37.85269057006668,
+      "fr_contact_yaw_deg": 37.85269057006668
+    }
+  ]
+}

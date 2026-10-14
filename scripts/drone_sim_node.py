@@ -2,7 +2,9 @@
 """ROS 1 (rospy) node wrapping the MuJoCo quadrotor simulation.
 
 Parameters (private, ``~``):
-    model_path (str, required) : absolute path to the MuJoCo MJCF file
+    backend (str)             : holoarm (latest Flight) or quadrotor (X2)
+    model_path (str)          : MuJoCo MJCF file, required for quadrotor only
+    holoarm_dir (str)         : installed/source HoLoArm scene directory
     hover_thrust (float)       : per-motor hover thrust offset
     max_thrust (float)         : per-motor thrust clip
     init_x / init_y / init_z   : spawn position [m]
@@ -21,31 +23,43 @@ from nav_msgs.msg import Odometry
 import tf2_ros
 
 from pairs_softuav_sim.controller import QuadrotorSim
+from pairs_softuav_sim.holoarm import HoLoArmSim
 
 
 class DroneSimNode:
     def __init__(self):
-        model_path = rospy.get_param("~model_path")
+        backend = rospy.get_param("~backend", "quadrotor")
+        model_path = rospy.get_param("~model_path", "")
         x0 = rospy.get_param("~init_x", 0.0)
         y0 = rospy.get_param("~init_y", 0.0)
         z0 = rospy.get_param("~init_z", 1.0)
         self.frame_id = rospy.get_param("~frame_id", "odom")
         self.child_frame_id = rospy.get_param("~child_frame_id", "base_link")
 
-        self.sim = QuadrotorSim(
-            model_path,
-            target=(x0, y0, z0),
-            hover_thrust=rospy.get_param("~hover_thrust", 2.3789),
-            max_thrust=rospy.get_param("~max_thrust", 8.0),
-        )
+        if backend == 'holoarm':
+            self.sim = HoLoArmSim(
+                holoarm_dir=rospy.get_param('~holoarm_dir', None),
+                target=(x0,y0,z0), gap=rospy.get_param('~gap',.46),
+                speed=rospy.get_param('~speed',.6))
+        elif backend == 'quadrotor':
+            if not model_path:
+                raise ValueError('quadrotor backend requires ~model_path')
+            self.sim = QuadrotorSim(
+                model_path,
+                target=(x0, y0, z0),
+                hover_thrust=rospy.get_param("~hover_thrust", 2.3789),
+                max_thrust=rospy.get_param("~max_thrust", 8.0),
+            )
+        else:
+            raise ValueError(f'Unknown simulation backend: {backend}')
         self.sim.reset_pose(x0, y0, z0)
 
         self.odom_pub = rospy.Publisher("~odom", Odometry, queue_size=10)
         self.tf_broadcaster = tf2_ros.TransformBroadcaster()
         rospy.Subscriber("~target", Point, self._on_target, queue_size=1)
 
-        rospy.loginfo("drone_sim_node up: model=%s, rate=%.0f Hz",
-                      model_path, 1.0 / self.sim.timestep)
+        rospy.loginfo("drone_sim_node up: backend=%s, model=%s, rate=%.0f Hz",
+                      backend, model_path or 'HoLoArm reference scene', 1.0 / self.sim.timestep)
         self.timer = rospy.Timer(rospy.Duration(self.sim.timestep), self._on_step)
 
     def _on_target(self, msg):

@@ -1,0 +1,59 @@
+<mujoco model="Original X2-inspired rigid visual kit">
+  <!-- Authored primitive/mesh artwork; no upstream Skydio meshes are bundled.
+       Visual geoms have zero mass and never participate in collision. -->
+  <default>
+    <default class="rigid_x2_visual">
+      <geom mass="0" contype="0" conaffinity="0" group="2"
+            rgba="0.11 0.13 0.15 1"/>
+    </default>
+  </default>
+  <asset>
+    <texture name="rigid_x2_carbon_texture" type="2d" builtin="checker"
+             width="64" height="64" rgb1="0.10 0.11 0.12" rgb2="0.035 0.045 0.055"/>
+    <material name="rigid_x2_carbon" texture="rigid_x2_carbon_texture"
+              texrepeat="10 2" texuniform="true" specular="0.3" shininess="0.3"/>
+    <material name="rigid_x2_silver" rgba="0.70 0.74 0.78 1" specular="0.55" shininess="0.5"/>
+    <material name="rigid_x2_lens" rgba="0.035 0.18 0.25 1" specular="0.9" shininess="0.8"/>
+    <mesh name="rigid_x2_hull"
+          vertex="-0.09 -0.028 -0.022  -0.067 -0.046 -0.022  0.063 -0.046 -0.022  0.092 -0.027 -0.022
+                  0.092 0.027 -0.022  0.063 0.046 -0.022  -0.067 0.046 -0.022  -0.09 0.028 -0.022
+                  -0.078 -0.025 0.031  -0.060 -0.038 0.031  0.048 -0.038 0.031  0.078 -0.023 0.031
+                  0.078 0.023 0.031  0.048 0.038 0.031  -0.060 0.038 0.031  -0.078 0.025 0.031"
+          face="0 2 1  0 3 2  0 4 3  0 5 4  0 6 5  0 7 6
+                8 9 10  8 10 11  8 11 12  8 12 13  8 13 14  8 14 15
+                0 1 9  0 9 8  1 2 10  1 10 9  2 3 11  2 11 10  3 4 12  3 12 11
+                4 5 13  4 13 12  5 6 14  5 14 13  6 7 15  6 15 14  7 0 8  7 8 15"/>
+  </asset>
+  <worldbody>
+    <body name="body_visual">
+      <geom name="hull" class="rigid_x2_visual" type="mesh" mesh="rigid_x2_hull"/>
+      <geom name="battery" class="rigid_x2_visual" type="box" pos="-0.02 0 0.035" size="0.052 0.029 0.009" rgba="0.20 0.23 0.26 1"/>
+      <geom name="top_panel" class="rigid_x2_visual" type="box" pos="0.039 0 0.033" size="0.018 0.023 0.004" material="rigid_x2_silver"/>
+      <geom name="status_light" class="rigid_x2_visual" type="box" pos="0.006 0 0.045" size="0.006 0.003 0.001" rgba="0.10 0.80 1 1"/>
+      <geom name="antenna_l" class="rigid_x2_visual" type="capsule" fromto="-0.062 0.020 0.04 -0.062 0.020 0.126" size="0.0025" rgba="0.025 0.035 0.04 1"/>
+      <geom name="antenna_r" class="rigid_x2_visual" type="capsule" fromto="-0.062 -0.020 0.04 -0.062 -0.020 0.126" size="0.0025" rgba="0.025 0.035 0.04 1"/>
+      <geom name="camera_bracket" class="rigid_x2_visual" type="box" pos="0.079 0 -0.026" size="0.012 0.032 0.013" rgba="0.18 0.20 0.22 1"/>
+      <geom name="camera_gimbal" class="rigid_x2_visual" type="box" pos="0.101 0 -0.026" size="0.019 0.026 0.020" rgba="0.045 0.055 0.065 1"/>
+      <geom name="camera_l_rim" class="rigid_x2_visual" type="cylinder" pos="0.121 0.012 -0.025" size="0.0085 0.003" euler="0 1.5707963 0" material="rigid_x2_silver"/>
+      <geom name="camera_r_rim" class="rigid_x2_visual" type="cylinder" pos="0.121 -0.012 -0.025" size="0.007 0.003" euler="0 1.5707963 0" material="rigid_x2_silver"/>
+      <geom name="camera_l_lens" class="rigid_x2_visual" type="cylinder" pos="0.1245 0.012 -0.025" size="0.0065 0.001" euler="0 1.5707963 0" material="rigid_x2_lens"/>
+      <geom name="camera_r_lens" class="rigid_x2_visual" type="cylinder" pos="0.1245 -0.012 -0.025" size="0.005 0.001" euler="0 1.5707963 0" material="rigid_x2_lens"/>
+      <geom name="landing_l" class="rigid_x2_visual" type="capsule" fromto="-0.045 0.032 -0.015 -0.045 0.043 -0.071" size="0.0035"/>
+      <geom name="landing_r" class="rigid_x2_visual" type="capsule" fromto="-0.045 -0.032 -0.015 -0.045 -0.043 -0.071" size="0.0035"/>
+    </body>
+    <body name="arm_visual">
+      <geom name="boom" class="rigid_x2_visual" type="capsule" fromto="0.003 0 0 0.136 0 0" size="0.0105" material="rigid_x2_carbon"/>
+      <geom name="fold_mount" class="rigid_x2_visual" type="box" pos="0.009 0 0.002" size="0.016 0.015 0.013" rgba="0.16 0.18 0.20 1"/>
+      <geom name="mount_pin" class="rigid_x2_visual" type="cylinder" pos="0.009 0 0.017" size="0.006 0.003" material="rigid_x2_silver"/>
+      <geom name="boom_tip" class="rigid_x2_visual" type="box" pos="0.119 0 0" size="0.016 0.013 0.011"/>
+    </body>
+    <body name="motor_visual">
+      <geom name="motor_base" class="rigid_x2_visual" type="cylinder" pos="0 0 -0.003" size="0.021 0.012" rgba="0.04 0.05 0.06 1"/>
+      <geom name="motor_bell" class="rigid_x2_visual" type="cylinder" pos="0 0 0.010" size="0.023 0.009" material="rigid_x2_silver"/>
+      <geom name="prop_blur" class="rigid_x2_visual" type="cylinder" pos="0 0 0.022" size="0.104 0.0006" rgba="0.90 0.93 0.96 0.14"/>
+      <geom name="prop_blade" class="rigid_x2_visual" type="ellipsoid" pos="0 0 0.023" size="0.104 0.010 0.0015" rgba="0.73 0.77 0.81 1"/>
+      <geom name="hub" class="rigid_x2_visual" type="cylinder" pos="0 0 0.025" size="0.008 0.004" rgba="0.055 0.07 0.08 1"/>
+      <geom name="rotor_light" class="rigid_x2_visual" type="box" pos="-0.024 0 -0.002" size="0.002 0.006 0.004" rgba="0.08 0.8 0.4 1"/>
+    </body>
+  </worldbody>
+</mujoco>
