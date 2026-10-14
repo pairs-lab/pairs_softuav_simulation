@@ -75,7 +75,7 @@ Soft-vs-rigid  behavior video:
 [speed_sweep_comparison.mp4](outputs/wall_collision_comparison/speed_sweep_comparison.mp4) illustrates wall impacts at 2–7.6 m/s, with HoLoArm-inspired soft-drone and X2-inspired rigid-drone visuals. The video highlights soft-arm deformation, post-impact motion, recovery, and simulated rigid-arm fracture. Model assumptions and limitations are documented in the [behavior notes](holoarm/RIGID_WALL_BEHAVIOR.md).
 
 
-To recreate this behavior video in a new output directory (requires `ffmpeg`):
+To recreate this behavior video in a new output directory:
 
 ```bash
 MUJOCO_GL=egl python3 holoarm/rigid_offset_behavior_sweep.py \
@@ -89,7 +89,7 @@ python3 holoarm/holoarm_narrow_passage_viewer.py
 ```
 
 The baseline renderer is also available separately from the behavior video
-above and requires `ffmpeg`:
+above and uses the same bundled FFmpeg:
 
 ```bash
 # Render a single impact

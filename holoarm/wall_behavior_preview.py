@@ -7,7 +7,6 @@ import argparse
 import json
 import math
 from pathlib import Path
-import shutil
 import subprocess
 
 import mujoco
@@ -105,9 +104,9 @@ class BehaviorTrial(Trial):
 
 def render_preview(trials, output, fps=30, titles=None):
     """Compare qualitative profiles on a time axis aligned at first contact."""
+    from imageio_ffmpeg import get_ffmpeg_exe
     from PIL import Image, ImageDraw, ImageFont
-    if shutil.which('ffmpeg') is None:
-        raise RuntimeError('ffmpeg is required')
+    ffmpeg = get_ffmpeg_exe()
     width, height = 800, 600
     output.parent.mkdir(parents=True, exist_ok=True)
     renderers = []
@@ -122,7 +121,7 @@ def render_preview(trials, output, fps=30, titles=None):
             t.model.vis.global_.offwidth = width
             t.model.vis.global_.offheight = height
             renderers.append(mujoco.Renderer(t.model, height=height, width=width))
-        process = subprocess.Popen(['ffmpeg', '-hide_banner', '-loglevel', 'error', '-n',
+        process = subprocess.Popen([ffmpeg, '-hide_banner', '-loglevel', 'error', '-n',
             '-f', 'rawvideo', '-pix_fmt', 'rgb24', '-s', f'{2*width}x{height}',
             '-r', str(fps), '-i', '-', '-an', '-c:v', 'libx264', '-preset', 'fast',
             '-crf', '18', '-pix_fmt', 'yuv420p', '-movflags', '+faststart', str(output)],

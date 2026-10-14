@@ -12,7 +12,6 @@ import json
 import math
 import os
 from pathlib import Path
-import shutil
 import subprocess
 import xml.etree.ElementTree as ET
 
@@ -420,9 +419,9 @@ def camera(close=False):
 
 def render_video(trials, output, width=640, height=540, fps=30, show_height_loss=False,
                  slow_motion_window_s=.26, close_follow=False, show_yaw_motion=False):
+    from imageio_ffmpeg import get_ffmpeg_exe
     from PIL import Image, ImageDraw, ImageFont
-    if shutil.which('ffmpeg') is None:
-        raise RuntimeError('ffmpeg is required to render videos')
+    ffmpeg = get_ffmpeg_exe()
     renderers = []
     saved_states = [(t.data.qpos.copy(),t.data.qvel.copy(),t.data.eq_active.copy()) for t in trials]
     try:
@@ -443,7 +442,7 @@ def render_video(trials, output, width=640, height=540, fps=30, show_height_loss
                       np.arange(slow_end,end,1/fps)]
         output = Path(output)
         output.parent.mkdir(parents=True,exist_ok=True)
-        command = ['ffmpeg','-hide_banner','-loglevel','error','-n','-f','rawvideo','-pix_fmt','rgb24',
+        command = [ffmpeg,'-hide_banner','-loglevel','error','-n','-f','rawvideo','-pix_fmt','rgb24',
                    '-s',f'{width*2}x{height}','-r',str(fps),'-i','-','-an','-c:v','libx264',
                    '-preset','fast','-crf','18','-pix_fmt','yuv420p','-movflags','+faststart',str(output)]
         process = subprocess.Popen(command,stdin=subprocess.PIPE)
@@ -585,13 +584,14 @@ def plot_results(summaries,directory):
 
 def combine_videos(paths,directory,filename='speed_sweep_comparison.mp4'):
     """Join compatible survey clips without re-encoding them."""
+    from imageio_ffmpeg import get_ffmpeg_exe
     directory = Path(directory)
     manifest = directory/'video_list.ffconcat'
     if any(path.resolve().parent != directory.resolve() for path in paths):
         raise ValueError('Survey clips must reside in the results directory')
     manifest.write_text('ffconcat version 1.0\n'+''.join(f"file '{path.name}'\n" for path in paths))
     output = directory/filename
-    subprocess.run(['ffmpeg','-hide_banner','-loglevel','error','-n','-f','concat','-safe','1',
+    subprocess.run([get_ffmpeg_exe(),'-hide_banner','-loglevel','error','-n','-f','concat','-safe','1',
                     '-i',str(manifest),'-c','copy','-movflags','+faststart',str(output)],check=True)
     return output
 

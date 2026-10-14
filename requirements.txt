@@ -4,6 +4,7 @@ mujoco>=3.0
 numpy>=1.24
 simple-pid>=2.0
 pynput>=1.7
-# Offline wall-impact videos and speed-survey plots (ffmpeg is also required).
+# Offline wall-impact videos and speed-survey plots.
+imageio-ffmpeg>=0.6
 Pillow>=9.0
 matplotlib>=3.6

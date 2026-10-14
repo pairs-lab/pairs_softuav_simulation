@@ -53,7 +53,7 @@ Results, videos and plots are saved in `outputs/wall_collision_study/`. Use
 `--no-fracture --no-video` for an unbreakable rigid control case. See
 [the methodology](WALL_COLLISION_STUDY.md) for assumptions, recovery criteria,
 reference-video interpretation and the distinction from the paper's drop tests.
-`ffmpeg` must be available on `PATH`.
+FFmpeg is bundled by `imageio-ffmpeg`, installed from `requirements.txt`.
 
 The rigid drone now uses original X2-inspired visual geometry from
 `models/rigid_x2_visual.xml`: a dark shell, dual cameras, rear antennas, carbon
