@@ -14,20 +14,6 @@ MuJoCo drone simulations with cascaded PID control. Two independent demos:
   Needs the external [`mujoco_menagerie`](https://github.com/google-deepmind/mujoco_menagerie)
   model (one extra download — see below).
 
-## Branches
-
-This repo is organized by runtime — clone the branch that matches your stack:
-
-| Branch | Contents |
-| --- | --- |
-| `main` | Standalone Python + MuJoCo demos, no ROS |
-| `ros1` | ROS 1 (catkin / rospy) wrapper node — **you are here** |
-| `ros2` | ROS 2 (ament_python / rclpy) wrapper node |
-
-```bash
-git clone -b ros1 https://github.com/pairs-lab/pairs_softuav_simulation.git   # ROS 1
-```
-
 ## Structure
 
 ```
@@ -50,6 +36,9 @@ You need Python 3.9+ (tested on 3.12) and a display for the viewer.
 Using [uv](https://github.com/astral-sh/uv) (recommended, no sudo):
 
 ```bash
+curl -LsSf https://astral.sh/uv/install.sh | sh
+source $HOME/.local/bin/env
+uv --version
 uv venv --python 3.12 .venv
 uv pip install --python .venv -r requirements.txt
 source .venv/bin/activate
