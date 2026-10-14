@@ -1,14 +1,16 @@
 <launch>
-  <!-- HoLoArm narrow-passage simulation (self-contained, no extra downloads) -->
-  <arg name="model"
-       default="$(find pairs_softuav_simulation)/holoarm/models/holoarm_narrow_passage.xml"/>
+  <!-- Same current model, arena and Flight as the keyboard narrow-gap viewer. -->
+  <arg name="gap" default="0.46"/>
+  <arg name="speed" default="0.6"/>
 
   <node pkg="pairs_softuav_simulation" type="drone_sim_node.py"
         name="drone_sim" output="screen">
-    <param name="model_path"   value="$(arg model)"/>
-    <param name="hover_thrust" value="2.3789"/>
+    <param name="backend" value="holoarm"/>
+    <param name="holoarm_dir" value="$(find pairs_softuav_simulation)/holoarm"/>
+    <param name="gap" value="$(arg gap)"/>
+    <param name="speed" value="$(arg speed)"/>
     <param name="init_x"       value="0.0"/>
     <param name="init_y"       value="0.0"/>
-    <param name="init_z"       value="1.0"/>
+    <param name="init_z"       value="1.2"/>
   </node>
 </launch>

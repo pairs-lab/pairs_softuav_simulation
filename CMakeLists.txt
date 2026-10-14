@@ -21,3 +21,10 @@ catkin_install_python(PROGRAMS
 install(DIRECTORY launch
   DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
 )
+
+# HoLoArm ROS uses the exact scene/controller shared with the standalone viewer.
+install(DIRECTORY holoarm
+  DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
+  PATTERN "__pycache__" EXCLUDE
+  PATTERN "test_*.py" EXCLUDE
+)

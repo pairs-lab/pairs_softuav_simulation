@@ -1,0 +1,29 @@
+{
+  "speeds": [
+    2.0,
+    2.5,
+    3.0,
+    3.5,
+    4.0,
+    4.5,
+    5.0,
+    5.5,
+    6.0,
+    6.5,
+    7.0,
+    7.6
+  ],
+  "rigid_heading_deg": 0.0,
+  "feedback_delay_s": 0.012,
+  "feedback_nominal_hz": 150.0,
+  "shock_hold_s": 0.04,
+  "shock_threshold_g": 16.0,
+  "arm_fracture_force_n": 2000.0,
+  "arm_fracture_moment_nm": 110.0,
+  "soft_profile": "unchanged CompressionLeanTrial",
+  "post_impact_s": 7.0,
+  "rigid_profile": "illustrative transient feedback degradation",
+  "assumed_post_contact_delay_s": 0.05,
+  "assumed_post_contact_delay_duration_s": 2.8,
+  "controller_matched_to_soft": false
+}
