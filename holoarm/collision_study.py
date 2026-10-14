@@ -418,7 +418,8 @@ def camera(close=False):
 
 
 def render_video(trials, output, width=640, height=540, fps=30, show_height_loss=False,
-                 slow_motion_window_s=.26, close_follow=False, show_yaw_motion=False):
+                 slow_motion_window_s=.26, close_follow=False, show_yaw_motion=False,
+                 overwrite=False):
     from imageio_ffmpeg import get_ffmpeg_exe
     from PIL import Image, ImageDraw, ImageFont
     ffmpeg = get_ffmpeg_exe()
@@ -442,7 +443,8 @@ def render_video(trials, output, width=640, height=540, fps=30, show_height_loss
                       np.arange(slow_end,end,1/fps)]
         output = Path(output)
         output.parent.mkdir(parents=True,exist_ok=True)
-        command = [ffmpeg,'-hide_banner','-loglevel','error','-n','-f','rawvideo','-pix_fmt','rgb24',
+        command = [ffmpeg,'-hide_banner','-loglevel','error','-y' if overwrite else '-n',
+                   '-f','rawvideo','-pix_fmt','rgb24',
                    '-s',f'{width*2}x{height}','-r',str(fps),'-i','-','-an','-c:v','libx264',
                    '-preset','fast','-crf','18','-pix_fmt','yuv420p','-movflags','+faststart',str(output)]
         process = subprocess.Popen(command,stdin=subprocess.PIPE)
@@ -582,7 +584,7 @@ def plot_results(summaries,directory):
     plt.close(fig)
 
 
-def combine_videos(paths,directory,filename='speed_sweep_comparison.mp4'):
+def combine_videos(paths,directory,filename='speed_sweep_comparison.mp4',overwrite=False):
     """Join compatible survey clips without re-encoding them."""
     from imageio_ffmpeg import get_ffmpeg_exe
     directory = Path(directory)
@@ -591,7 +593,8 @@ def combine_videos(paths,directory,filename='speed_sweep_comparison.mp4'):
         raise ValueError('Survey clips must reside in the results directory')
     manifest.write_text('ffconcat version 1.0\n'+''.join(f"file '{path.name}'\n" for path in paths))
     output = directory/filename
-    subprocess.run([get_ffmpeg_exe(),'-hide_banner','-loglevel','error','-n','-f','concat','-safe','1',
+    subprocess.run([get_ffmpeg_exe(),'-hide_banner','-loglevel','error','-y' if overwrite else '-n',
+                    '-f','concat','-safe','1',
                     '-i',str(manifest),'-c','copy','-movflags','+faststart',str(output)],check=True)
     return output
 
@@ -600,11 +603,12 @@ def cli():
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument('--config',type=Path,default=CONFIG)
     p.add_argument('--impact-speed',type=float,default=2.)
-    p.add_argument('--sweep',action='store_true',help='2..7 m/s every 0.5 m/s, plus 7.6 m/s (12 cases)')
+    p.add_argument('--sweep',action='store_true',help='2..7 m/s every 0.8 m/s, plus 7.6 m/s (12 cases)')
     p.add_argument('--speeds',type=float,nargs='+',help='custom survey speeds')
     p.add_argument('--output',type=Path,default=HERE.parent/'outputs'/'wall_collision_recovery.mp4')
     p.add_argument('--results-dir',type=Path,default=HERE.parent/'outputs'/'wall_collision_study')
     p.add_argument('--no-video',action='store_true')
+    p.add_argument('--overwrite',action='store_true',help='replace existing target videos and regenerate results')
     p.add_argument('--no-fracture',action='store_true',help='unbreakable rigid control case')
     p.add_argument('--duration',type=float,help='simulated seconds after first expected impact')
     p.add_argument('--width',type=int,default=640)
@@ -625,10 +629,10 @@ def cli():
         p.error('use even dimensions >=320x240 and fps in 1..120')
     paths = ([args.results_dir/f'comparison_{s:g}ms.mp4' for s in speeds]
              if args.sweep or args.speeds else [args.output])
-    if not args.no_video and any(path.exists() for path in paths):
-        p.error('a target video already exists; select a new output/results directory')
-    if len(speeds)>1 and not args.no_video and (args.results_dir/'speed_sweep_comparison.mp4').exists():
-        p.error('the combined video already exists; select a new results directory')
+    if not args.no_video and not args.overwrite and any(path.exists() for path in paths):
+        p.error('a target video already exists; use --overwrite or select a new output/results directory')
+    if len(speeds)>1 and not args.no_video and not args.overwrite and (args.results_dir/'speed_sweep_comparison.mp4').exists():
+        p.error('the combined video already exists; use --overwrite or select a new results directory')
     all_trials = []
     for speed,path in zip(speeds,paths):
         trials = [Trial(kind,speed,cfg,fracture=not args.no_fracture).run() for kind in ('soft','rigid')]
@@ -639,12 +643,12 @@ def cli():
                   f"bend={s['peak_bend_deg']:.1f} deg, tilt={s['peak_tilt_deg']:.1f} deg, "
                   f"broken={s['broken_arms']}, recovery={s['recovery_time_s']}",flush=True)
         if not args.no_video:
-            render_video(trials,path,args.width,args.height,args.fps)
+            render_video(trials,path,args.width,args.height,args.fps,overwrite=args.overwrite)
     summaries=write_results(all_trials,args.results_dir,cfg)
     write_report(summaries,args.results_dir,cfg)
     if len(speeds)>1:
         plot_results(summaries,args.results_dir)
         if not args.no_video:
-            print(f'Combined video: {combine_videos(paths,args.results_dir).resolve()}')
+            print(f'Combined video: {combine_videos(paths,args.results_dir,overwrite=args.overwrite).resolve()}')
     print(f'Results: {args.results_dir.resolve()}')
     return 0

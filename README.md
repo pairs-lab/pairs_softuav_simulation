@@ -97,10 +97,11 @@ python holoarm/wall_collision_comparison.py --impact-speed 2.5 --duration 6
 
 # Render the full speed sweep to a new directory
 python holoarm/wall_collision_comparison.py --sweep \
-  --results-dir outputs/wall_collision_baseline
+  --results-dir outputs/wall_collision_baseline --overwrite
 ```
 
 Use `--output /path/to/result.mp4` to set the single-video output path.
+Add `--overwrite` to rerun in the same directory and replace existing target videos.
 The script automatically uses EGL when no desktop display is available.
 The speed sweep produces MP4 videos, CSV/JSON metrics, and plots.
 

@@ -49,6 +49,8 @@ The video includes a close-up and slow-motion impact replay. To survey 12 speeds
 python holoarm/wall_collision_comparison.py --sweep
 ```
 
+Add `--overwrite` to replace existing videos when rerunning a comparison or sweep.
+
 Results, videos and plots are saved in `outputs/wall_collision_study/`. Use
 `--no-fracture --no-video` for an unbreakable rigid control case. See
 [the methodology](WALL_COLLISION_STUDY.md) for assumptions, recovery criteria,
