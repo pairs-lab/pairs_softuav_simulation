@@ -1,6 +1,0 @@
-{
-  "repository": "https://github.com/pairs-lab/pairs_softuav_simulation",
-  "branch": "ros1",
-  "base_commit": "cac9507100179613c6665d3f9e9e7bec4499e9dc",
-  "modifications": "standalone Windows CAD integration; not pushed upstream"
-}

@@ -42,8 +42,8 @@ Wall and passage dimensions are full dimensions in metres, configured in
 while preserving its front face. `--passage-thickness` changes obstacle depth
 along world X while preserving the clear gap and guide connections.
 
-Windows users can open `CHAY_HOLOARM_WINDOWS.bat` in the repository root; see
-[Windows instructions](../README_WINDOWS_HOLOARM.md). Linux interactive demos
+Windows users can open `RUN_HOLOARM_WINDOWS.bat` in the repository root; see
+[Windows setup](../README.md#run). Linux interactive demos
 use an X11 desktop. Both platforms need a working OpenGL driver for rendering.
 
 ## Narrow-passage controls

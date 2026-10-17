@@ -73,8 +73,7 @@ K/C values are imported unchanged and are not tuned to force a recovery result.
 
 Existing `outputs/wall_collision_baseline/` files from the old model are
 historical. Importing CAD does not replace them. The supplied reference CAD
-checks are in `outputs/cad_checks/`, accompanied by
-[the original verification report](../CAD_VERIFICATION.md).
+checks are retained in `outputs/cad_checks/`.
 
 Historical behavior demos explicitly import `legacy_collision_study.py` and
 legacy JSON configurations. They do not silently reuse CAD parameters.

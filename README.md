@@ -110,8 +110,13 @@ Rigid-arm fracture is disabled by default; `--assumed-fracture` explicitly
 enables the old, uncalibrated thresholds. See the
 [methodology and limitations](holoarm/WALL_COLLISION_STUDY.md).
 
-On Windows, `CHAY_HOLOARM_WINDOWS.bat` opens the supplied CAD demo launcher;
-see [Windows instructions](README_WINDOWS_HOLOARM.md).
+On Windows, install 64-bit Python with the `py` launcher (Python 3.12 is
+recommended), then double-click `RUN_HOLOARM_WINDOWS.bat` in the repository
+root. It creates `.venv`, installs `requirements-windows.txt` on the first run
+(Internet access required), and opens the CAD launcher for the narrow-passage
+viewer, wall-impact viewer and video export. These demos run without ROS or
+WSL. Rendering needs a working OpenGL graphics driver; FFmpeg is bundled with
+the Python dependencies.
 
 Historical behavior scripts use `holoarm/legacy_collision_study.py` and their
 original illustrative mechanics. Their 2–7.6 m/s results and X2-style artwork

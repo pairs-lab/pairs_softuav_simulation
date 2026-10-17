@@ -1,4 +1,6 @@
 # Keep generated CSV results portable without CRLF whitespace warnings.
 *.csv text eol=lf
+# Check out Windows launchers with native line endings.
+*.bat text eol=crlf
 # Preserve frozen CAD/material hashes on Windows as well as Linux.
 holoarm/models/holoarm_cad/** -text
