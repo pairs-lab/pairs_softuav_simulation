@@ -1,0 +1,18 @@
+{
+  "units": "metres; all dimensions are full thickness/width/height, not MuJoCo half sizes",
+  "impact_wall": {
+    "front_x_m": 0.505,
+    "thickness_m": 0.09,
+    "width_m": 2.4,
+    "height_m": 2.5
+  },
+  "passage": {
+    "center_x_m": 2.1,
+    "wall_thickness_x_m": 0.5,
+    "wall_depth_y_m": 1.6,
+    "height_m": 2.4,
+    "guide_length_x_m": 0.7,
+    "guide_offset_y_m": 0.28,
+    "guide_thickness_m": 0.05
+  }
+}

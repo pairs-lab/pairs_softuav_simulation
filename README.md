@@ -4,17 +4,19 @@
 > the simulation. See [**ROS 1 wrapper**](#ros-1-wrapper) below. The plain Python
 > demos still work standalone; the `main` branch has no ROS dependency.
 
-MuJoCo drone simulations with cascaded PID control. Two independent demos:
+MuJoCo drone simulations with two independent demos:
 
-- **HoloArm** — a soft-arm quadrotor flown through a narrow V-shaped gap to test
-  collision behavior. Self-contained. Based on Pham et al., *HoLoArm: Deformable
+- **HoLoArm CAD** — the supplied CAD geometry, mass/rotor layout, nonlinear
+  stiffness and v2 viscoelastic parameters, shared by the narrow-passage viewer,
+  wall-impact study and ROS adapter. Based on Pham et al., *HoLoArm: Deformable
   Arms for Collision-Tolerant Quadrotor Flight* (RA-L 2026) — see
   [holoarm/README.md](holoarm/README.md) for the citation.
 - **Skydio X2** — keyboard teleop of a Skydio X2 in a furnished indoor house.
   Needs the external [`mujoco_menagerie`](https://github.com/google-deepmind/mujoco_menagerie)
   model (one extra download — see below).
 
-The repository also includes an illustrative simulation comparing soft- and rigid-frame drone responses to wall collisions under the chosen model assumptions.
+The wall study compares soft HoLoArm with the same CAD and mass with locked
+arms. See [CAD parameters and assumptions](holoarm/CAD_MODEL.md).
 
 ## Branches
 
@@ -35,9 +37,11 @@ git clone -b ros1 https://github.com/pairs-lab/pairs_softuav_simulation.git   # 
 ```
 pairs_softuav_simulation/
 ├── holoarm/
-│   ├── models/                       # physics template + current visual assets
+│   ├── models/holoarm_cad/           # CAD meshes, skins, frozen material/flight data
+│   ├── models/scene_config.json      # wall and passage dimensions
+│   ├── cad_model.py                 # CAD builder + nonlinear viscoelastic forces
 │   ├── holoarm_narrow_passage_viewer.py # current interactive narrow-gap demo
-│   └── wall_collision_comparison.py  # headless soft-vs-rigid MP4 renderer
+│   └── wall_collision_comparison.py  # soft-vs-locked-CAD MP4 renderer
 ├── skydio_x2/
 │   ├── models/
 │   │   ├── indoor_env.xml            # house environment; includes the X2 model
@@ -71,33 +75,28 @@ pip install -r requirements.txt
 
 ## Run
 
-Soft-vs-rigid  behavior video:
-[speed_sweep_comparison.mp4](outputs/wall_collision_comparison/speed_sweep_comparison.mp4) illustrates wall impacts at 2–7.6 m/s, with HoLoArm-inspired soft-drone and X2-inspired rigid-drone visuals. The video highlights soft-arm deformation, post-impact motion, recovery, and simulated rigid-arm fracture. Model assumptions and limitations are documented in the [behavior notes](holoarm/RIGID_WALL_BEHAVIOR.md).
-
-
-To recreate this behavior video in a new output directory:
-
-```bash
-MUJOCO_GL=egl python3 holoarm/rigid_offset_behavior_sweep.py \
-  --rigid-profile transient --output-dir outputs/wall_collision_comparison_new
-```
-
-HoloArm narrow-passage test — no extra setup:
+HoLoArm CAD narrow-passage viewer:
 
 ```bash
 python3 holoarm/holoarm_narrow_passage_viewer.py
 ```
 
-The baseline renderer is also available separately from the behavior video
-above and uses the same bundled FFmpeg:
+Interactive wall impact and headless passage check:
+
+```bash
+python3 holoarm/cad_wall_viewer.py --speed .6
+python3 holoarm/holoarm_narrow_passage_viewer.py --smoke-test
+```
+
+The CAD comparison renderer uses FFmpeg bundled in `requirements.txt`:
 
 ```bash
 # Render a single impact
-python holoarm/wall_collision_comparison.py --impact-speed 2.5 --duration 6
+python holoarm/wall_collision_comparison.py --impact-speed .6 --duration 1.5
 
-# Render the full speed sweep to a new directory
+# Render CAD comparisons at 0.3, 0.6 and 0.9 m/s
 python holoarm/wall_collision_comparison.py --sweep \
-  --results-dir outputs/wall_collision_baseline --overwrite
+  --results-dir outputs/wall_collision_cad
 ```
 
 Use `--output /path/to/result.mp4` to set the single-video output path.
@@ -105,10 +104,18 @@ Add `--overwrite` to rerun in the same directory and replace existing target vid
 The script automatically uses EGL when no desktop display is available.
 The speed sweep produces MP4 videos, CSV/JSON metrics, and plots.
 
-The visuals feature a HoLoArm-inspired soft frame and an X2-inspired rigid
-frame; they do not establish fidelity to either platform's real-world
-dynamics. See the
+Edit `holoarm/models/scene_config.json` for wall/passage dimensions, or use
+`--wall-thickness` for wall impacts and `--passage-thickness` for the passage.
+Rigid-arm fracture is disabled by default; `--assumed-fracture` explicitly
+enables the old, uncalibrated thresholds. See the
 [methodology and limitations](holoarm/WALL_COLLISION_STUDY.md).
+
+On Windows, `CHAY_HOLOARM_WINDOWS.bat` opens the supplied CAD demo launcher;
+see [Windows instructions](README_WINDOWS_HOLOARM.md).
+
+Historical behavior scripts use `holoarm/legacy_collision_study.py` and their
+original illustrative mechanics. Their 2–7.6 m/s results and X2-style artwork
+are separate from the current CAD model; see [legacy behavior notes](holoarm/RIGID_WALL_BEHAVIOR.md).
 
 Skydio X2 indoor teleop — first fetch the drone model into `skydio_x2/models/`:
 
@@ -119,7 +126,7 @@ unzip -q menagerie.zip && rm menagerie.zip   # extracts to mujoco_menagerie-main
 cd ../.. && python skydio_x2/teleop.py
 ```
 
-Each opens an interactive MuJoCo viewer, so run it from a real desktop session.
+Run interactive MuJoCo viewers from a real desktop session.
 
 ## Controls
 
@@ -133,9 +140,9 @@ Each opens an interactive MuJoCo viewer, so run it from a real desktop session.
 ## ROS 1 wrapper
 
 This branch wraps the simulation in a catkin package (`pairs_softuav_simulation`).
-The node `drone_sim_node.py` runs the cascaded-PID flight controller from
-`src/pairs_softuav_sim/controller.py`, replacing the keyboard teleop with a ROS
-setpoint topic.
+The node `drone_sim_node.py` uses the same CAD model and `Flight` controller as
+the HoLoArm viewer, with a ROS setpoint topic. The separate Skydio backend uses
+`src/pairs_softuav_sim/controller.py`.
 
 | Interface | Topic | Type |
 | --- | --- | --- |

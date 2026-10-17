@@ -1,31 +1,99 @@
 {
   "config": {
     "mass_kg": 0.97,
-    "timestep_s": 0.0005,
+    "timestep_s": 0.0004,
     "settle_s": 0.8,
     "approach_s": 0.35,
     "post_impact_s": 3.0,
     "altitude_m": 1.2,
-    "guard_radius_m": 0.105,
-    "yaw_stiffness_nm_rad": 0.45,
-    "yaw_damping_nms_rad": 0.15,
-    "pitch_stiffness_nm_rad": 18.0,
-    "pitch_damping_nms_rad": 0.16,
-    "slide_stiffness_n_m": 1000.0,
-    "slide_damping_ns_m": 8.0,
-    "slide_range_m": 0.004,
-    "bend_limit_deg": 80.0,
+    "guard_radius_m": 0.085,
+    "slide_range_m": 0.008,
+    "bend_limit_deg": 40.10704565915762,
     "rigid_failure_moment_nm": 110.0,
     "rigid_failure_force_n": 2000.0,
     "motor_time_constant_s": 0.04,
-    "max_motor_thrust_n": 7.8,
-    "contact_time_constant_s": 0.002,
+    "max_motor_thrust_n": 7.876,
+    "contact_time_constant_s": 0.003,
     "contact_damping_ratio": 1.0,
-    "wall_friction": 0.15,
     "recovery_position_tolerance_m": 0.12,
     "recovery_speed_tolerance_m_s": 0.25,
     "recovery_tilt_tolerance_deg": 8.0,
     "recovery_hold_s": 0.3,
-    "notes": "Reduced-order demonstration, not an identified HoLoArm digital twin. Mass, rotor geometry, motor delay, and axial stroke are informed by Pham et al. 2026. Joint stiffness/damping, collision solver parameters, and rigid fracture limits are explicit uncalibrated assumptions. The 7.6 m/s paper result includes drop tests and must not be treated as a wall-impact fracture threshold."
+    "notes": "User CAD and frozen bench v2; assumed neutral-hover preload and ideal-slip guard contact. Rigid baseline is the same CAD with arms locked, not a measured fracture model.",
+    "parameter_files": {
+      "stiffness": "holoarm_cad/stiffness.json",
+      "viscoelasticity": "holoarm_cad/rheology.json",
+      "geometry": "scene_config.json"
+    },
+    "wall_front_x_m": 0.505,
+    "wall_thickness_m": 0.09,
+    "wall_width_m": 2.4,
+    "wall_height_m": 2.5,
+    "material_model": "frozen_one_arm_v2",
+    "contact_model": "normal_only_ideal_slip",
+    "constitutive_parameters": {
+      "x": [
+        708.1449365438953,
+        2031.6732861603186,
+        1.4548050111403634,
+        1.0
+      ],
+      "alpha": [
+        0.00634947926673307,
+        0.4342543540086351,
+        0.45158022828568706,
+        0.529468570805136
+      ],
+      "beta_up": [
+        0.008241835243297777,
+        0.596699429377152,
+        0.4983097588344953,
+        0.6791162437683942
+      ],
+      "beta_down": [
+        0.009868294236319146,
+        0.49075721668963285,
+        0.7927851864321314,
+        0.5841629384175543
+      ]
+    },
+    "nonlinear_stiffness_parameters": {
+      "model": "Agreed nonlinear loading laws; same coefficients as the previous HoLoArm model",
+      "units": {
+        "x": "m",
+        "angles": "rad",
+        "force": "N",
+        "moment": "N m"
+      },
+      "x": {
+        "force_saturation_N": 25.56,
+        "displacement_scale_m": 0.00294
+      },
+      "alpha": {
+        "moment_saturation_Nm": 0.383,
+        "initial_stiffness_Nm_per_rad": 1.8694
+      },
+      "beta_up": {
+        "moment_saturation_Nm": 0.3205,
+        "initial_stiffness_Nm_per_rad": 2.3895
+      },
+      "beta_down": {
+        "moment_saturation_Nm": 0.5609,
+        "initial_stiffness_Nm_per_rad": 2.3895
+      },
+      "negative_x_branch": "linear continuation using the tangent at zero; unchanged from previous model"
+    }
+  },
+  "model_provenance": {
+    "model": "CAD HoLoArm, 37 mesh assets, 20 visual skins",
+    "arm_numbers": {
+      "fl": 3,
+      "fr": 1,
+      "rl": 2,
+      "rr": 4
+    },
+    "rheology_sha256": "74fc7f6a269defd15093712150bb7a5ecc94c70ac6ba5367e1be134fb29c8c41",
+    "stiffness_sha256": "b848346204df7aa2f2e78202dcb48d875f10cc5dd5b3dc81ca517ae9dc39ac2f",
+    "scope": "Frozen bench parameters with assumed hover preload and ideal-slip contact; not a validated flight digital twin."
   }
 }

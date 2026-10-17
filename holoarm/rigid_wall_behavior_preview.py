@@ -1,4 +1,6 @@
-"""Research-informed rigid wall scenarios; X2-inspired appearance, NOT X2 validation.
+"""Legacy illustrative mechanics; independent of the frozen CAD model.
+
+Research-informed rigid wall scenarios; X2-inspired appearance, NOT X2 validation.
 
 Guarded: intact rigid frame, delayed/sampled feedback, possible rebound/recovery.
 Exposed: rotating swept propeller envelopes touch the wall; assumed impulse-
@@ -15,7 +17,7 @@ import xml.etree.ElementTree as ET
 import mujoco
 import numpy as np
 
-from collision_study import ARMS, Trial, load_config, write_results
+from legacy_collision_study import ARMS, Trial, load_config, write_results
 from wall_behavior_preview import BehaviorTrial, render_preview
 
 

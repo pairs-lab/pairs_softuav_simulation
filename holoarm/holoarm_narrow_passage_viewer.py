@@ -1,8 +1,9 @@
-"""Keyboard flight with the reference-style HoLoArm and passive folding arms.
+"""Keyboard flight with the supplied HoLoArm CAD and passive folding arms.
 
 Run from the repository root:
     python3 holoarm/holoarm_narrow_passage_viewer.py
-Uses window-local X11 input: focus the MuJoCo window, hold to fly, release to brake.
+Focus the MuJoCo window, hold to fly, and release to brake.
+Keyboard input supports Windows and X11 desktops.
 """
 from __future__ import annotations
 
@@ -18,10 +19,11 @@ import numpy as np
 
 from collision_study import ARMS, build_model, load_config, tilt_deg
 from soft_visual import add_soft_ligaments
-from viewer_keyboard import X11Keyboard
+from viewer_keyboard import Keyboard
+from cad_model import CADMaterial, load_scene
 
 
-def arena(gap):
+def arena(gap, wall_thickness=None):
     """World-fixed contacts: a tapered doorway, not an invisible constraint."""
     world = ET.Element('worldbody')
 
@@ -31,25 +33,34 @@ def arena(gap):
             euler=f'0 0 {yaw}', rgba=colour, mass='0',
             contype='1' if contact else '0', conaffinity='2' if contact else '0')
 
+    config = load_scene()['passage']
+    thickness = config['wall_thickness_x_m'] if wall_thickness is None else wall_thickness
+    if not math.isfinite(thickness) or thickness <= 0:
+        raise ValueError('Passage wall thickness must be positive and finite')
+    start_x = config['center_x_m']-thickness/2
+    end_x = config['center_x_m']+thickness/2
+    depth = config['wall_depth_y_m']
+    height = config['height_m']
+    guide_half = config['guide_thickness_m']/2
     half = gap / 2
     for side in (-1, 1):
-        box(f'slot_wall_{side}', (2.1, side*(half+.8), 1.2),
-            (.25, .8, 1.2), '.42 .49 .56 1')
+        box(f'slot_wall_{side}', (config['center_x_m'], side*(half+depth/2), height/2),
+            (thickness/2, depth/2, height/2), '.42 .49 .56 1')
         # Inner faces of guides join the exact slot boundary; offset their
         # thickness outwards so --gap measures clear width, not centre lines.
         for label, start, end in (
-            ('entrance', (1.15, side*(half+.28)), (1.85, side*half)),
-            ('exit', (2.35, side*half), (3.05, side*(half+.28))),
+            ('entrance', (start_x-config['guide_length_x_m'], side*(half+config['guide_offset_y_m'])), (start_x, side*half)),
+            ('exit', (end_x, side*half), (end_x+config['guide_length_x_m'], side*(half+config['guide_offset_y_m']))),
         ):
             a, b = np.array(start), np.array(end)
             delta = b-a
             length = np.linalg.norm(delta)
             normal = np.array([-delta[1], delta[0]]) / length * side
-            centre = (a+b)/2 + .025*normal
-            box(f'{label}_guide_{side}', (*centre, 1.2),
-                (length/2, .025, 1.2), '.62 .70 .75 1', yaw=math.atan2(delta[1], delta[0]))
-        box(f'slot_edge_{side}', (1.845, side*(half+.008), 1.2),
-            (.004, .008, 1.18), '1 .55 .08 1', contact=False)
+            centre = (a+b)/2 + guide_half*normal
+            box(f'{label}_guide_{side}', (*centre, height/2),
+                (length/2, guide_half, height/2), '.62 .70 .75 1', yaw=math.atan2(delta[1], delta[0]))
+        box(f'slot_edge_{side}', (start_x-.005, side*(half+.008), height/2),
+            (.004, .008, max(.001,height/2-.02)), '1 .55 .08 1', contact=False)
     return world
 
 
@@ -57,10 +68,13 @@ class Flight:
     """Position/yaw hold with allocation from the current folded motor poses."""
     control_period = .002
 
-    def __init__(self, gap=.46, speed=.6):
+    def __init__(self, gap=.46, speed=.6, passage_thickness=None):
         self.cfg = load_config()
-        self.model = build_model('soft', self.cfg, environment=arena(gap))
+        self.passage_thickness = (load_scene()['passage']['wall_thickness_x_m']
+                                  if passage_thickness is None else passage_thickness)
+        self.model = build_model('soft', self.cfg, environment=arena(gap, self.passage_thickness))
         self.data = mujoco.MjData(self.model)
+        self.material = CADMaterial(self.model, self.data)
         self.core = self.model.body('holoarm_core').id
         self.sites = [self.model.site(f'thrust_{a}').id for a in ARMS]
         self.bend = [self.model.joint(f'{a}_bend_{axis}').qposadr[0]
@@ -78,6 +92,7 @@ class Flight:
         self.yaw = 0.
         self.thrust = np.full(4, self.mass*9.81/4)
         self.data.ctrl[:] = self.thrust
+        self.material.reset()
         self.step_count = 0
         self.max_bend = 0.
         self.manual_velocity = np.zeros(3)
@@ -148,7 +163,9 @@ class Flight:
     def step(self):
         if self.step_count % self.control_steps == 0:
             self.controller()
+        self.material.before_step()
         mujoco.mj_step(self.model, self.data)
+        self.material.after_step()
         self.step_count += 1
         self.max_bend = max(self.max_bend, float(np.max(np.abs(self.data.qpos[self.bend]))))
 
@@ -161,7 +178,7 @@ H: brake + hover      R: reset     Space: pause
 F: camera (overview / follow / top)    Esc: quit
 Hold movement keys for continuous world-coordinate velocity.
 Release to brake and hover; losing window focus also brakes.
-White frame + orange bands follow actual arm motion.'''
+CAD meshes and joint skins follow actual arm motion.'''
 
 
 class HeldControls:
@@ -236,7 +253,7 @@ def smoke_test(flight):
         if released_at is not None and d.time-released_at > 2:
             break
     mujoco.mj_forward(m, d)
-    result = dict(gap_m=flight.gap, hover_error_m=hover_error,
+    result = dict(gap_m=flight.gap, passage_thickness_x_m=flight.passage_thickness, hover_error_m=hover_error,
         final_position_m=d.qpos[:3].tolist(), contacts_steps=contacts,
         max_bend_deg=math.degrees(flight.max_bend), peak_tilt_deg=peak_tilt,
         min_height_m=min_height, final_speed_m_s=float(np.linalg.norm(d.qvel[:3])),
@@ -260,7 +277,7 @@ def run_viewer(flight):
     print(f'Clear slot: {flight.gap:.2f} m. Flight speed limit: {flight.speed:.2f} m/s.', flush=True)
     with mujoco.viewer.launch_passive(m, d,
             show_left_ui=False, show_right_ui=False) as viewer, \
-            X11Keyboard('MuJoCo : HoLoArm keyboard narrow passage') as keyboard:
+            Keyboard('MuJoCo : HoLoArm keyboard narrow passage') as keyboard:
         with viewer.lock():
             viewer.cam.lookat[:] = [1.5, 0, 1.0]
             viewer.cam.distance = 4.6
@@ -303,7 +320,10 @@ def run_viewer(flight):
                     mujoco.mjtGridPos.mjGRID_TOPLEFT,
                     f'HoLoArm | {state} | gap {flight.gap*100:.0f} cm\n'
                     f'XYZ {d.qpos[0]:.2f}, {d.qpos[1]:.2f}, {d.qpos[2]:.2f} m\n'
-                    f'Arm bend {bend:.1f} deg | contacts {d.ncon}',
+                    f'Arm bend {bend:.1f} deg | contacts {d.ncon}\n'
+                    f'Obstacle thickness X {flight.passage_thickness:.3f} m\n'
+                    f'CAD model | frozen K/C | ideal-slip contact\n'
+                    +('JOINT GUARD REACHED' if bend>math.degrees(.69) else ''),
                     'I/K forward/back | J/L left/right\nU/O up/down | Q/E yaw\n'
                     'Hold to fly / release to brake\nH hover | R reset | Space pause | F camera')])
             viewer.sync()
@@ -319,15 +339,20 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--gap', type=float, default=.46, help='Clear slot width in metres (default .46)')
     parser.add_argument('--speed', type=float, default=.6, help='Horizontal speed limit, m/s (default .6)')
+    parser.add_argument('--passage-thickness', type=float,
+                        help='Full obstacle thickness along world X in metres')
     parser.add_argument('--smoke-test', action='store_true', help='Run headless hover and slot-crossing checks')
     args = parser.parse_args()
     if not math.isfinite(args.gap) or not .3 <= args.gap <= 1.:
         parser.error('--gap must be between .3 and 1 metre')
     if not math.isfinite(args.speed) or not .1 <= args.speed <= 2.:
         parser.error('--speed must be between .1 and 2 m/s')
-    if not args.smoke_test and not os.environ.get('DISPLAY'):
+    if not args.smoke_test and os.name != 'nt' and not os.environ.get('DISPLAY'):
         parser.error('A desktop DISPLAY is required for the interactive viewer')
-    flight = Flight(args.gap, args.speed)
+    if args.passage_thickness is not None and (
+            not math.isfinite(args.passage_thickness) or args.passage_thickness <= 0):
+        parser.error('passage thickness must be positive and finite')
+    flight = Flight(args.gap, args.speed, args.passage_thickness)
     smoke_test(flight) if args.smoke_test else run_viewer(flight)
 
 

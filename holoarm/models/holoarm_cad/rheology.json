@@ -1,0 +1,38 @@
+{
+  "model": "One Maxwell memory branch plus effective unloading factor, fixed per bench loading direction.",
+  "parameters_order": [
+    "c0",
+    "k_memory",
+    "tau_s",
+    "unloading_scale"
+  ],
+  "parameters": {
+    "x": [
+      708.1449365438953,
+      2031.6732861603186,
+      1.4548050111403634,
+      1.0
+    ],
+    "alpha": [
+      0.00634947926673307,
+      0.4342543540086351,
+      0.45158022828568706,
+      0.529468570805136
+    ],
+    "beta_up": [
+      0.008241835243297777,
+      0.596699429377152,
+      0.4983097588344953,
+      0.6791162437683942
+    ],
+    "beta_down": [
+      0.009868294236319146,
+      0.49075721668963285,
+      0.7927851864321314,
+      0.5841629384175543
+    ]
+  },
+  "scope": "Conditional bench-release calibration. Original loading K is unchanged. Not a validated arbitrary cyclic/flight material model.",
+  "fit_rule": "Training uses alternate eligible trials in ascending trial order; other eligible trials used for conditional validation, not parameter fitting.",
+  "initial_state": "z=q at release, representing relaxed held configuration; zero initial velocity."
+}

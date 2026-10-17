@@ -1,12 +1,14 @@
-"""Window-local X11 key grabs and physical held-key polling.
+"""Window-local held-key polling on X11 and Windows desktops.
 
 MuJoCo's passive key callback has no release events and does not consume its
 native debug shortcuts. Grab only our keys on our viewer window, not globally,
-so they never reach those shortcuts. Mouse/UI and other apps stay untouched.
+so they never reach those shortcuts. Windows polls keys while this process's
+MuJoCo window has focus. Mouse/UI and other apps stay untouched.
 """
 import ctypes as C
 import ctypes.util
 import time
+import os
 
 
 KEY_NAMES = ('i', 'k', 'j', 'l', 'u', 'o', 'q', 'e', 'h', 'r', 'f',
@@ -129,3 +131,36 @@ class X11Keyboard:
 
     def __exit__(self, *_):
         self.close()
+
+
+class WindowsKeyboard:
+    """Poll held keys only while this process's MuJoCo window is foreground.
+
+    No global keyboard hook. Key release/focus loss returns an empty set so
+    HeldControls brakes naturally. Native viewer debug overlays are cleared
+    by clean_flight_visuals in the viewer loop.
+    """
+    KEYS={**{ord(k):k for k in 'IKJLUOQEHRF'},0x26:'I',0x28:'K',0x25:'J',0x27:'L',0x20:'SPACE',0x1B:'ESC'}
+
+    def __init__(self,window_title):
+        from ctypes import wintypes as W
+        self.user=C.WinDLL('user32',use_last_error=True)
+        self.user.GetForegroundWindow.argtypes=[];self.user.GetForegroundWindow.restype=W.HWND
+        self.user.GetWindowThreadProcessId.argtypes=[W.HWND,C.POINTER(W.DWORD)];self.user.GetWindowThreadProcessId.restype=W.DWORD
+        self.user.GetWindowTextW.argtypes=[W.HWND,W.LPWSTR,C.c_int];self.user.GetWindowTextW.restype=C.c_int
+        self.user.GetAsyncKeyState.argtypes=[C.c_int];self.user.GetAsyncKeyState.restype=C.c_short
+        self.DWORD=W.DWORD
+
+    def poll(self):
+        hwnd=self.user.GetForegroundWindow();pid=self.DWORD()
+        self.user.GetWindowThreadProcessId(hwnd,C.byref(pid))
+        title=C.create_unicode_buffer(512);self.user.GetWindowTextW(hwnd,title,512)
+        if pid.value!=os.getpid() or 'mujoco' not in title.value.lower():return set()
+        return {name for key,name in self.KEYS.items() if self.user.GetAsyncKeyState(key)&0x8000}
+
+    def close(self):pass
+    def __enter__(self):return self
+    def __exit__(self,*_):self.close()
+
+
+Keyboard = WindowsKeyboard if os.name == 'nt' else X11Keyboard

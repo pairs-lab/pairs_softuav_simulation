@@ -99,6 +99,10 @@ def ligament_paths(model,data,segments=10):
 
 def add_soft_ligaments(scene,model,data):
     """Add curved orange TPU-band artwork to a freshly updated render scene."""
+    if model.nskin:
+        # The CAD model already carries joint/ligament skins bound to its
+        # actual base, sliding shaft and distal link. Do not draw fake bands.
+        return
     for path in ligament_paths(model,data):
         for a,b in zip(path[:-1],path[1:]):
             if scene.ngeom>=scene.maxgeom:

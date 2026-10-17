@@ -13,7 +13,7 @@ class OffsetRigidTests(unittest.TestCase):
         self.cfg=json.loads(BASELINE.read_text())['config']
 
     def test_trimmed_speed_selection(self):
-        from collision_study import SPEEDS as baseline_speeds
+        from legacy_collision_study import SPEEDS as baseline_speeds
         from behavior_speed_sweep import SPEEDS as behavior_speeds
         expected=[2.,2.5,3.,3.5,4.,4.5,5.,5.5,6.,6.5,7.,7.6]
         self.assertEqual(SELECTED_SPEEDS,expected)

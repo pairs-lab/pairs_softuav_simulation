@@ -1,5 +1,10 @@
 # Rigid wall behavior: evidence and isolated scenarios
 
+These historical scenarios use `legacy_collision_study.py` and the original
+illustrative model/configuration. They do not use the current HoLoArm CAD or
+its supplied material parameters. See [CAD model](CAD_MODEL.md) for the current
+viewer, wall-impact study and ROS adapter.
+
 ## Latest illustrative wall-recovery profile
 
 `outputs/wall_collision_comparison/` keeps the approved

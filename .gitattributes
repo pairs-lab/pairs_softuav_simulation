@@ -1,2 +1,4 @@
 # Keep generated CSV results portable without CRLF whitespace warnings.
 *.csv text eol=lf
+# Preserve frozen CAD/material hashes on Windows as well as Linux.
+holoarm/models/holoarm_cad/** -text

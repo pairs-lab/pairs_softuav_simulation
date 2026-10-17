@@ -86,14 +86,17 @@ class ViewerTests(unittest.TestCase):
     def test_ligaments_are_visible_and_follow_bending(self):
         f = self.flight
         scene = mujoco.MjvScene(f.model, maxgeom=300)
+        opt=mujoco.MjvOption();cam=mujoco.MjvCamera()
+        mujoco.mjv_updateScene(f.model,f.data,opt,None,cam,mujoco.mjtCatBit.mjCAT_ALL,scene)
+        count=scene.ngeom
         add_soft_ligaments(scene, f.model, f.data)
-        self.assertEqual(scene.ngeom, 160)
-        positions = np.array([scene.geoms[i].pos.copy() for i in range(scene.ngeom)])
+        self.assertEqual(scene.ngeom,count)  # no duplicate decorative bands
+        self.assertEqual(f.model.nskin,20)
+        positions=scene.skinvert.copy()
         f.data.qpos[f.model.joint('fl_bend_yaw').qposadr[0]] = .3
         mujoco.mj_forward(f.model, f.data)
-        scene.ngeom = 0
-        add_soft_ligaments(scene, f.model, f.data)
-        self.assertGreater(np.linalg.norm(scene.geoms[9].pos-positions[9]), .001)
+        mujoco.mjv_updateScene(f.model,f.data,opt,None,cam,mujoco.mjtCatBit.mjCAT_ALL,scene)
+        self.assertGreater(np.max(np.linalg.norm((scene.skinvert-positions).reshape(-1,3),axis=1)),.001)
 
     def test_hover(self):
         f = self.flight

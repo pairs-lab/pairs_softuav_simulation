@@ -1,0 +1,6 @@
+mujoco==3.16.0
+numpy>=1.26,<3
+simple-pid>=2.0,<3
+imageio-ffmpeg>=0.6,<1
+Pillow>=10,<13
+matplotlib>=3.8,<4

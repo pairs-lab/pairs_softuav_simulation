@@ -1,4 +1,6 @@
-"""Frontal passive arm compression FIRST, controller-driven recovery bank SECOND.
+"""Legacy illustrative mechanics; independent of the frozen CAD model.
+
+Frontal passive arm compression FIRST, controller-driven recovery bank SECOND.
 
 The wall is vertical and all contact/elastic/fracture parameters match the old
 no-footer study. The explicit bank maneuver is an illustrative flight-control
@@ -14,7 +16,7 @@ import time
 import numpy as np
 
 from speed_sweep_config import SPEEDS
-from collision_study import render_video, write_results, combine_videos
+from legacy_collision_study import render_video, write_results, combine_videos
 from restored_wall_behavior_sweep import RestoredTrial, BASELINE, ROOT
 
 

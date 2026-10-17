@@ -1,4 +1,6 @@
-"""Original no-footer wall scenario + physical oblique-contact lean + arm fracture.
+"""Legacy illustrative mechanics; independent of the frozen CAD model.
+
+Original no-footer wall scenario + physical oblique-contact lean + arm fracture.
 
 Preserves the original controller, mass, joints, motor response, initial-speed
 protocol and rigid arm-failure thresholds. A configurable wall pitch (default
@@ -14,13 +16,13 @@ import time
 
 import numpy as np
 
-from collision_study import Trial, combine_videos, render_video, write_results
+from legacy_collision_study import Trial, combine_videos, render_video, write_results
 from speed_sweep_config import SPEEDS
 from rigid_wall_behavior_preview import add_visible_rigid_guards
 
 ROOT = Path(__file__).resolve().parents[1]
 # Keep the reference configuration independent of disposable rendered outputs.
-BASELINE = ROOT/'holoarm'/'models'/'wall_collision_baseline.json'
+BASELINE = ROOT/'holoarm'/'models'/'legacy_wall_collision_baseline.json'
 
 
 class RestoredTrial(Trial):

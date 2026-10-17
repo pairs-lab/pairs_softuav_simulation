@@ -1,4 +1,6 @@
-"""Isolated wall-contact behavior preview inspired by reference seconds 10–19.
+"""Legacy illustrative mechanics; independent of the frozen CAD model.
+
+Isolated wall-contact behavior preview inspired by reference seconds 10–19.
 
 Does not alter collision_study defaults, soft artwork or narrow-passage flight.
 This is qualitative tuning, not an identified reconstruction or an RL policy.
@@ -12,7 +14,7 @@ import subprocess
 import mujoco
 import numpy as np
 
-from collision_study import Trial, load_config, write_results, camera, tilt_deg
+from legacy_collision_study import Trial, load_config, write_results, camera, tilt_deg
 from soft_visual import add_soft_ligaments
 
 
@@ -75,7 +77,7 @@ class BehaviorTrial(Trial):
             self.step(settling=True)
         self.nominal_bend = self.data.qpos[self.bend_indices].copy() if self.bend_indices else np.zeros(8)
         leading = max(self.data.site_xpos[s, 0] for s in self.sites)+self.cfg['guard_radius_m']+.003
-        from collision_study import WALL_FRONT
+        from legacy_collision_study import WALL_FRONT
         shift = WALL_FRONT-leading-self.speed*self.cfg['approach_s']
         for j in range(self.model.njnt):
             if self.model.jnt_type[j] == mujoco.mjtJoint.mjJNT_FREE:

@@ -1,4 +1,6 @@
-"""Qualitative rigid speed progression with a level, frontal initial condition.
+"""Legacy illustrative mechanics; independent of the frozen CAD model.
+
+Qualitative rigid speed progression with a level, frontal initial condition.
 
 No speed-conditioned crash/wobble rules or deliberate heading offset.
 Delayed feedback and load-triggered arm fracture
@@ -17,7 +19,7 @@ import mujoco
 import numpy as np
 
 from speed_sweep_config import SPEEDS
-from collision_study import render_video, write_results, combine_videos
+from legacy_collision_study import render_video, write_results, combine_videos
 from compression_then_lean_sweep import CompressionLeanTrial
 from restored_wall_behavior_sweep import RestoredTrial, BASELINE, ROOT
 

@@ -3,7 +3,7 @@ import unittest
 
 import numpy as np
 
-from collision_study import Trial, load_config
+from legacy_collision_study import Trial, load_config
 from wall_behavior_preview import BehaviorTrial
 
 

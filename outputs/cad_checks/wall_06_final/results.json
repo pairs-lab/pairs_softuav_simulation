@@ -1,0 +1,141 @@
+{
+  "config": {
+    "mass_kg": 0.97,
+    "timestep_s": 0.0004,
+    "settle_s": 0.8,
+    "approach_s": 0.35,
+    "post_impact_s": 1.5,
+    "altitude_m": 1.2,
+    "guard_radius_m": 0.085,
+    "slide_range_m": 0.008,
+    "bend_limit_deg": 40.10704565915762,
+    "rigid_failure_moment_nm": 110.0,
+    "rigid_failure_force_n": 2000.0,
+    "motor_time_constant_s": 0.04,
+    "max_motor_thrust_n": 7.876,
+    "contact_time_constant_s": 0.003,
+    "contact_damping_ratio": 1.0,
+    "recovery_position_tolerance_m": 0.12,
+    "recovery_speed_tolerance_m_s": 0.25,
+    "recovery_tilt_tolerance_deg": 8.0,
+    "recovery_hold_s": 0.3,
+    "notes": "User CAD and frozen bench v2; assumed neutral-hover preload and ideal-slip guard contact. Rigid baseline is the same CAD with arms locked, not a measured fracture model.",
+    "material_model": "frozen_one_arm_v2",
+    "contact_model": "normal_only_ideal_slip",
+    "constitutive_parameters": {
+      "x": [
+        708.1449365438953,
+        2031.6732861603186,
+        1.4548050111403634,
+        1.0
+      ],
+      "alpha": [
+        0.00634947926673307,
+        0.4342543540086351,
+        0.45158022828568706,
+        0.529468570805136
+      ],
+      "beta_up": [
+        0.008241835243297777,
+        0.596699429377152,
+        0.4983097588344953,
+        0.6791162437683942
+      ],
+      "beta_down": [
+        0.009868294236319146,
+        0.49075721668963285,
+        0.7927851864321314,
+        0.5841629384175543
+      ]
+    }
+  },
+  "visual": {
+    "soft": "HoLoArm user CAD, frozen nonlinear K and v2 viscoelastic model",
+    "rigid": "Same HoLoArm CAD with arms locked: counterfactual baseline",
+    "physics": "Same CAD, mass and rotor sites; ideal-slip contact; no assumed fracture by default"
+  },
+  "results": [
+    {
+      "kind": "soft",
+      "requested_speed_m_s": 0.6,
+      "actual_impact_speed_m_s": 0.5999976540126689,
+      "impact_time_s": 0.35400000000000603,
+      "peak_wall_force_n": 14.97257245651425,
+      "peak_horizontal_acceleration_m_s2": 8.544406681381139,
+      "first_impact_impulse_ns": 0.6728267736828991,
+      "peak_10ms_mean_body_deceleration_m_s2": 7.466106612607536,
+      "peak_arm_contact_moment_nm": 0.7458921862753229,
+      "peak_arm_contact_force_n": 7.825066901136767,
+      "peak_tilt_deg": 25.26949971305681,
+      "peak_bend_deg": 17.486306199943005,
+      "peak_compression_mm": 0.11003109551615718,
+      "peak_abs_slide_mm": 0.11003109551615718,
+      "max_slide_limit_violation_mm": 0.0,
+      "fracture_enabled": false,
+      "broken_arms": 0,
+      "failure_times_s": [],
+      "ground_contact_time_s": null,
+      "recovered": true,
+      "recovery_time_s": 0.9651999999999139,
+      "final_position_m": [
+        -0.22809648102625385,
+        2.32136241108743e-06,
+        1.1968092887026416
+      ],
+      "final_speed_m_s": 0.015026596138784298,
+      "model_provenance": {
+        "model": "CAD HoLoArm, 37 mesh assets, 20 visual skins",
+        "arm_numbers": {
+          "fl": 3,
+          "fr": 1,
+          "rl": 2,
+          "rr": 4
+        },
+        "rheology_sha256": "74fc7f6a269defd15093712150bb7a5ecc94c70ac6ba5367e1be134fb29c8c41",
+        "scope": "Frozen bench parameters with assumed hover preload and ideal-slip contact; not a validated flight digital twin."
+      },
+      "joint_guard_reached": false
+    },
+    {
+      "kind": "rigid",
+      "requested_speed_m_s": 0.6,
+      "actual_impact_speed_m_s": 0.5999991506213063,
+      "impact_time_s": 0.353600000000006,
+      "peak_wall_force_n": 75.06832016965457,
+      "peak_horizontal_acceleration_m_s2": 79.81024820114983,
+      "first_impact_impulse_ns": 0.9895655144332977,
+      "peak_10ms_mean_body_deceleration_m_s2": 72.91028574175446,
+      "peak_arm_contact_moment_nm": 3.8227779853515145,
+      "peak_arm_contact_force_n": 37.90135819798313,
+      "peak_tilt_deg": 4.605676750125779,
+      "peak_bend_deg": 0.0,
+      "peak_compression_mm": 0.0,
+      "peak_abs_slide_mm": 0.0,
+      "max_slide_limit_violation_mm": 0.0,
+      "fracture_enabled": false,
+      "broken_arms": 0,
+      "failure_times_s": [],
+      "ground_contact_time_s": null,
+      "recovered": true,
+      "recovery_time_s": 0.9363999999999172,
+      "final_position_m": [
+        -0.21886839754792928,
+        4.807685081541453e-07,
+        1.1995977987157904
+      ],
+      "final_speed_m_s": 0.04790426769049416,
+      "model_provenance": {
+        "model": "CAD HoLoArm, 37 mesh assets, 20 visual skins",
+        "arm_numbers": {
+          "fl": 3,
+          "fr": 1,
+          "rl": 2,
+          "rr": 4
+        },
+        "rheology_sha256": "74fc7f6a269defd15093712150bb7a5ecc94c70ac6ba5367e1be134fb29c8c41",
+        "scope": "Frozen bench parameters with assumed hover preload and ideal-slip contact; not a validated flight digital twin."
+      },
+      "joint_guard_reached": false
+    }
+  ]
+}

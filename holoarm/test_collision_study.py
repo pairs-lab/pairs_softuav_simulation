@@ -1,105 +1,101 @@
-"""Physics invariants and controller/fracture regressions for the wall study."""
+"""CAD wall-impact integration, optional failure and measured-output contracts."""
+import csv
+import json
+from pathlib import Path
+import tempfile
 import unittest
 
 import mujoco
 import numpy as np
 
-from collision_study import Trial, build_model, load_config
-from soft_visual import ligament_paths
+from collision_study import Trial, load_config, write_report, write_results
 
 
 class CollisionStudyTests(unittest.TestCase):
-    def test_holoarm_visual_preserves_physics(self):
-        cfg=load_config()
-        legacy=build_model('soft',cfg,soft_visual='legacy')
-        styled=build_model('soft',cfg)
-        for name in ('body_mass','body_inertia','body_ipos','body_iquat','body_pos','body_quat',
-                     'jnt_type','jnt_qposadr','jnt_dofadr','jnt_stiffness','dof_damping',
-                     'actuator_gear','tendon_stiffness','tendon_damping'):
-            np.testing.assert_allclose(getattr(legacy,name),getattr(styled,name),rtol=1e-12,atol=1e-14)
-        for g in range(styled.ngeom):
-            name=mujoco.mj_id2name(styled,mujoco.mjtObj.mjOBJ_GEOM,g) or ''
-            if name.startswith('soft_holoarm_'):
-                self.assertEqual(styled.geom_contype[g],0)
-                self.assertEqual(styled.geom_conaffinity[g],0)
+    def test_frozen_material_state_advances_during_settling(self):
+        trial = Trial('soft', .6, load_config())
+        joint = trial.model.joint('fl_bend_yaw')
+        trial.data.qpos[joint.qposadr[0]] = .1
+        mujoco.mj_forward(trial.model, trial.data)
+        previous = trial.material.z.copy()
+        trial.step(settling=True)
+        self.assertLess(trial.data.qfrc_applied[joint.dofadr[0]], 0.)
+        self.assertFalse(np.array_equal(trial.material.z, previous))
+        self.assertFalse(trial.history)
+        self.assertEqual(trial.model.jnt_stiffness[joint.id], 0.)
 
-    def test_visual_ligaments_follow_actual_joint_sites(self):
-        trial=Trial('soft',2.,load_config())
-        before=ligament_paths(trial.model,trial.data)
-        trial.data.qpos[trial.model.joint('fl_bend_yaw').qposadr[0]]=.5
-        mujoco.mj_forward(trial.model,trial.data)
-        after=ligament_paths(trial.model,trial.data)
-        self.assertGreater(np.linalg.norm(after[0][-1]-before[0][-1]),.001)
-        for arm_index,arm in enumerate(('fl','fr','rl','rr')):
-            for band in range(4):
-                path=after[arm_index*4+band]
-                for point,end in ((path[0],'fixed'),(path[-1],'moving')):
-                    site=trial.model.site(f'{arm}_ligament_{end}_{band}').id
-                    np.testing.assert_allclose(point,trial.data.site_xpos[site],atol=1e-14)
+    def test_locked_reference_has_no_assumed_fracture_by_default(self):
+        trial = Trial('rigid', .6, load_config())
+        trial.fracture(np.full(4, 1e6), np.full(4, 1e6))
+        self.assertFalse(trial.fracture_enabled)
+        self.assertFalse(trial.broken.any())
+        self.assertTrue(trial.data.eq_active.all())
 
-    def test_x2_visual_preserves_physics(self):
-        cfg=load_config()
-        legacy=build_model('rigid',cfg,rigid_visual='legacy')
-        styled=build_model('rigid',cfg)
-        for name in ('body_mass','body_inertia','body_ipos','body_iquat','body_pos','body_quat',
-                     'jnt_type','jnt_qposadr','jnt_dofadr','eq_data','actuator_gear'):
-            np.testing.assert_allclose(getattr(legacy,name),getattr(styled,name),rtol=1e-12,atol=1e-14)
-        self.assertGreater(styled.ngeom,legacy.ngeom)
-        for g in range(styled.ngeom):
-            name=mujoco.mj_id2name(styled,mujoco.mjtObj.mjOBJ_GEOM,g) or ''
-            if name.startswith('rigid_x2_'):
-                self.assertEqual(styled.geom_contype[g],0)
-                self.assertEqual(styled.geom_conaffinity[g],0)
-        for arm in ('fl','fr','rl','rr'):
-            self.assertEqual(styled.geom(f'{arm}_guard_0').rgba[3],0)
+    def test_explicit_assumed_fracture_preserves_arm_state(self):
+        trial = Trial('rigid', .6, load_config(), fracture=True)
+        q, v = trial.data.qpos.copy(), trial.data.qvel.copy()
+        trial.fracture(np.zeros(4), np.zeros(4))
+        self.assertFalse(trial.broken.any())
+        moments = np.array([trial.cfg['rigid_failure_moment_nm']+1, 0, 0, 0])
+        trial.fracture(np.zeros(4), moments)
+        self.assertTrue(trial.broken[0])
+        self.assertFalse(trial.data.eq_active[trial.model.equality('fl_attachment').id])
+        self.assertEqual(trial.data.ctrl[0], 0.)
+        np.testing.assert_array_equal(trial.data.qpos, q)
+        np.testing.assert_array_equal(trial.data.qvel, v)
+        self.assertAlmostEqual(trial.model.body_mass.sum(), trial.cfg['mass_kg'])
 
-    def test_mass_and_guard_geometry_match(self):
+    def test_locked_approach_initializes_each_free_body(self):
+        trial = Trial('rigid', .6, load_config()).prepare_approach()
+        self.assertEqual(trial.data.time, 0.)
+        self.assertFalse(trial.history)
+        for joint in range(trial.model.njnt):
+            if trial.model.jnt_type[joint] == mujoco.mjtJoint.mjJNT_FREE:
+                self.assertEqual(trial.data.qvel[trial.model.jnt_dofadr[joint]], .6)
+
+    def test_low_speed_cad_impact_records_force_and_signed_compression(self):
         cfg = load_config()
-        soft, rigid = (build_model(kind,cfg) for kind in ('soft','rigid'))
-        self.assertAlmostEqual(soft.body_mass.sum(),cfg['mass_kg'],places=10)
-        self.assertAlmostEqual(rigid.body_mass.sum(),cfg['mass_kg'],places=10)
-        for arm in ('fl','fr','rl','rr'):
-            for segment in range(20):
-                name = f'{arm}_guard_{segment}'
-                np.testing.assert_allclose(soft.geom(name).size,rigid.geom(name).size)
-        self.assertEqual(rigid.neq,4)
-
-    def test_soft_yaw_has_passive_restoring_force(self):
-        t = Trial('soft',2.,load_config())
-        joint = t.model.joint('fl_bend_yaw')
-        t.data.qpos[joint.qposadr[0]] = .3
-        mujoco.mj_forward(t.model,t.data)
-        self.assertLess(t.data.qfrc_passive[joint.dofadr[0]],0)
-
-    def test_fracture_requires_load_and_preserves_arm_state(self):
-        t = Trial('rigid',2.,load_config())
-        q, v = t.data.qpos.copy(),t.data.qvel.copy()
-        t.fracture(np.zeros(4),np.zeros(4))
-        self.assertFalse(t.broken.any())
-        load = np.array([t.cfg['rigid_failure_moment_nm']+1,0,0,0])
-        t.fracture(np.zeros(4),load)
-        self.assertTrue(t.broken[0])
-        self.assertFalse(t.data.eq_active[t.model.equality('fl_attachment').id])
-        self.assertEqual(t.data.ctrl[0],0)
-        np.testing.assert_array_equal(t.data.qpos,q)
-        np.testing.assert_array_equal(t.data.qvel,v)
-        self.assertAlmostEqual(t.model.body_mass.sum(),t.cfg['mass_kg'],places=10)
-
-    def test_low_speed_both_recover_without_damage(self):
-        for kind in ('soft','rigid'):
+        cfg['post_impact_s'] = 1.
+        for kind in ('soft', 'rigid'):
             with self.subTest(kind=kind):
-                t = Trial(kind,1.5,load_config()).run()
-                self.assertAlmostEqual(t.actual_impact_speed,1.5,places=3)
-                self.assertIsNotNone(t.recovery_time)
-                self.assertIsNone(t.ground_time)
-                self.assertFalse(t.broken.any())
-                self.assertTrue(np.all(np.isfinite(t.data.qpos)))
+                trial = Trial(kind, .3, cfg).run()
+                row = trial.summary()
+                self.assertIsNotNone(trial.impact_time)
+                self.assertAlmostEqual(row['actual_impact_speed_m_s'], .3, places=4)
+                self.assertGreater(row['peak_wall_force_n'], 0.)
+                self.assertGreater(row['first_impact_impulse_ns'], 0.)
+                self.assertEqual(row['simulation_warning_count'], 0)
+                self.assertTrue(np.isfinite(trial.data.qpos).all())
+                self.assertTrue(np.isfinite(trial.data.qvel).all())
+                self.assertFalse(trial.broken.any())
+                if kind == 'soft':
+                    start = round(trial.impact_time/trial.model.opt.timestep)-1
+                    slides = np.array([h[0][trial.slide_indices] for h in trial.history[start:]])
+                    self.assertAlmostEqual(row['peak_compression_mm'], max(0., slides.max())*1000)
+                    self.assertAlmostEqual(row['peak_abs_slide_mm'], abs(slides).max()*1000)
+                else:
+                    self.assertIsNone(trial.material)
+                    self.assertEqual(row['peak_compression_mm'], 0.)
 
-    def test_no_fracture_control_is_unbreakable(self):
-        t = Trial('rigid',8.,load_config(),fracture=False)
-        t.fracture(np.full(4,1e6),np.full(4,1e6))
-        self.assertFalse(t.broken.any())
-        self.assertTrue(t.data.eq_active.all())
+    def test_results_keep_cad_provenance_and_unobserved_outcomes(self):
+        cfg = load_config()
+        trial = Trial('soft', .6, cfg)
+        with tempfile.TemporaryDirectory() as directory:
+            directory = Path(directory)
+            summaries = write_results([trial], directory, cfg)
+            write_report(summaries, directory, cfg)
+            saved = json.loads((directory/'results.json').read_text())
+            row = saved['results'][0]
+            self.assertIsNone(row['actual_impact_speed_m_s'])
+            self.assertFalse(row['recovered'])
+            self.assertIn('rheology_sha256', row['model_provenance'])
+            report = (directory/'REPORT.md').read_text()
+            self.assertIn('No impact', report)
+            self.assertIn('Not observed', report)
+            with (directory/'soft_0.6ms_trace.csv').open() as source:
+                columns = next(csv.reader(source))
+            self.assertIn('arm_compression_mm', columns)
+            self.assertIn('arm_abs_slide_mm', columns)
 
 
 if __name__ == '__main__':

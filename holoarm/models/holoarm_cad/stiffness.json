@@ -1,0 +1,9 @@
+{
+  "model": "Agreed nonlinear loading laws; same coefficients as the previous HoLoArm model",
+  "units": {"x": "m", "angles": "rad", "force": "N", "moment": "N m"},
+  "x": {"force_saturation_N": 25.56, "displacement_scale_m": 0.002940},
+  "alpha": {"moment_saturation_Nm": 0.3830, "initial_stiffness_Nm_per_rad": 1.8694},
+  "beta_up": {"moment_saturation_Nm": 0.3205, "initial_stiffness_Nm_per_rad": 2.3895},
+  "beta_down": {"moment_saturation_Nm": 0.5609, "initial_stiffness_Nm_per_rad": 2.3895},
+  "negative_x_branch": "linear continuation using the tangent at zero; unchanged from previous model"
+}

@@ -1,0 +1,98 @@
+# HoLoArm CAD model and parameter sources
+
+The current narrow-passage viewer, wall-impact study and ROS adapter use the
+supplied full-drone CAD and one-arm v2 material model. Everything needed at
+runtime lives under `holoarm/`; the original import directory is not required.
+
+## Files and parameter ownership
+
+| File | Purpose |
+| --- | --- |
+| `models/holoarm_cad/drone_cad.xml` and `assets/` | CAD assembly, 37 meshes and 20 visual skins |
+| `models/holoarm_cad/flight_config.json` | Supplied masses, rotor coordinates, motor directions and response data |
+| `models/holoarm_cad/stiffness.json` | Nonlinear loading laws |
+| `models/holoarm_cad/rheology.json` | Viscous damping, Maxwell memory and unloading parameters |
+| `models/holoarm_cad/frozen_manifest.json` | SHA-256 hashes of the supplied geometry and parameter files |
+| `models/scene_config.json` | Full wall and passage dimensions, in metres |
+| `models/wall_collision_config.json` | Wall-test timing, recovery criteria and parameter-file references |
+| `models/wall_collision_baseline.json` | Snapshot of the effective CAD baseline configuration |
+| `cad_model.py` | Model construction and material-force integration |
+
+The frozen files are imported without changing their coefficients or mesh
+bytes. Git attributes preserve their bytes across newline conversions.
+`load_config()` applies the CAD parameters; the old linear K/C values in
+`holoarm_physics.xml` do not configure the current CAD model.
+
+## Geometry, mass and motors
+
+The total mass is 0.970 kg. Each moving arm is 0.047 kg, including its 0.035 kg
+distal assembly; central mass is 0.782 kg. Meshes and skins add no extra mass.
+Supplied COM/inertia approximations are retained.
+
+Body axes are X forward, Y left, Z up. Motor numbering is front-right=1,
+front-left=3, rear-left=2, rear-right=4. The joint chain is axial slide,
+alpha/yaw, beta/pitch. Positive slide is compression toward the body.
+Motor delay is 0.04 s and maximum thrust is 7.876 N per motor. Thrust and yaw
+torque act at the current moving rotor sites.
+
+## Nonlinear stiffness and viscoelasticity
+
+For positive compression x in metres, the supplied loading force is
+`25.56 * (1 - exp(-x / 0.002940))` N. Negative x uses its linear tangent at zero.
+Angular loading moments use `Ms * tanh(K0 * angle / Ms)` with angles in radians.
+
+| Coordinate | Initial loading stiffness | Saturation |
+| --- | --- | --- |
+| x | 8693.877551 N/m | 25.56 N in compression |
+| alpha | 1.8694 N m/rad | 0.3830 N m |
+| beta >= 0 | 2.3895 N m/rad | 0.3205 N m |
+| beta < 0 | 2.3895 N m/rad | 0.5609 N m |
+
+The full v2 model combines that loading curve with viscous damping c0,
+Maxwell memory stiffness km and relaxation time tau, and an unloading scale s:
+
+| Preset | c0 | km | tau (s) | s |
+| --- | ---: | ---: | ---: | ---: |
+| x | 708.1449365 | 2031.6732862 | 1.4548050 | 1.0 |
+| alpha | 0.0063494793 | 0.4342543540 | 0.4515802 | 0.5294686 |
+| beta_up | 0.0082418352 | 0.5966994294 | 0.4983098 | 0.6791162 |
+| beta_down | 0.0098682942 | 0.4907572167 | 0.7927852 | 0.5841629 |
+
+For x, c0 has units N s/m and km has units N/m; for angles they have units
+N m s/rad and N m/rad. Full precision is retained in the JSON files.
+The supplied full-drone implementation fixes pitch damping/memory/unloading
+to `beta_up`; the loading moment still selects its directional saturation.
+It does not switch rheology presets during arbitrary cyclic motion.
+
+MuJoCo integrates viscous damping implicitly once. `CADMaterial` applies the
+nonlinear restoring and memory forces once, before each physics step, then
+updates memory afterward. Opening the CAD XML alone does not run this force law.
+
+## Controller and contact assumptions
+
+The supplied viewer and wall-test controllers retain their surrogate PD laws.
+The frozen flight file also contains control gains and a thrust curve; not all
+of those fields drive these controllers. No controller gains or K/C values
+were retuned during integration.
+
+The model assumes a fixed internal preload at the nominal CAD hover pose.
+It does not identify real static flight sag. Guard/wall and guard/passage
+contact is normal-only, with ideal tangential slip. Contact parameters and
+the inherited COM/inertia approximations remain assumptions.
+
+The slide interval [-1, 8] mm and hinge interval +/-0.70 rad are numerical
+guards from the supplied model, rather than measured mechanical stops.
+Reports distinguish positive compression, absolute slide travel and limit
+overtravel. Soft-material fracture is not implemented. The locked-arm
+comparison shares the CAD, mass and rotor layout; it is a counterfactual
+reference, not a measured rigid-airframe damage model.
+
+The default wall sweep is 0.3, 0.6 and 0.9 m/s. These are test conditions,
+not validated operating limits. Supplied reference results are in
+`outputs/cad_checks/`, with their original report in
+[`CAD_VERIFICATION.md`](../CAD_VERIFICATION.md). Existing baseline videos from
+the old model are historical and are not regenerated by importing this model.
+
+Historical behavior demos use `legacy_collision_study.py` and the explicitly
+named legacy configuration files. Their assumptions and results are separate
+from the CAD model.

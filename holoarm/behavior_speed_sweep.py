@@ -1,4 +1,6 @@
-"""Render accepted soft behavior and exposed or guarded rigid profiles.
+"""Legacy illustrative mechanics; independent of the frozen CAD model.
+
+Render accepted soft behavior and exposed or guarded rigid profiles.
 
 Speed labels are COMMAND targets. The finite-distance, thrust-driven approach
 does not achieve every target; measured impact speed is printed in each panel
@@ -10,7 +12,7 @@ import csv
 import json
 from pathlib import Path
 
-from collision_study import combine_videos, write_results
+from legacy_collision_study import combine_videos, write_results
 from wall_behavior_preview import BehaviorTrial, render_preview
 from rigid_wall_behavior_preview import RigidBehaviorTrial
 

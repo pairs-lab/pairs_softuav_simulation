@@ -9,7 +9,8 @@ import mujoco
 
 
 class HoLoArmSim:
-    def __init__(self, holoarm_dir=None, target=(0.,0.,1.2), gap=.46, speed=.6):
+    def __init__(self, holoarm_dir=None, target=(0.,0.,1.2), gap=.46, speed=.6,
+                 passage_thickness=None):
         # catkin installs the self-contained scene alongside launch files.
         scene_dir=Path(holoarm_dir) if holoarm_dir else Path(__file__).resolve().parents[2]/'holoarm'
         if not (scene_dir/'holoarm_narrow_passage_viewer.py').is_file():
@@ -17,7 +18,7 @@ class HoLoArmSim:
         if str(scene_dir) not in sys.path:
             sys.path.insert(0,str(scene_dir))
         from holoarm_narrow_passage_viewer import Flight
-        self.flight=Flight(gap=gap,speed=speed)
+        self.flight=Flight(gap=gap,speed=speed,passage_thickness=passage_thickness)
         self.m,self.d=self.flight.model,self.flight.data
         self.reset_pose(*target)
 
@@ -44,6 +45,6 @@ class HoLoArmSim:
                     angular_velocity=self.d.qvel[3:6].copy(),time=float(self.d.time))
 
     def add_visuals(self,scene):
-        """For renderers: orange ligaments follow the actual deformable joints."""
+        """Add legacy ligament artwork; CAD skins already belong to the model."""
         from soft_visual import add_soft_ligaments
         add_soft_ligaments(scene,self.m,self.d)

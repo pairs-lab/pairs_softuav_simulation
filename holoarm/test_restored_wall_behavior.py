@@ -4,7 +4,7 @@ import unittest
 
 import numpy as np
 
-from collision_study import Trial
+from legacy_collision_study import Trial
 from restored_wall_behavior_sweep import BASELINE, RestoredTrial
 
 
