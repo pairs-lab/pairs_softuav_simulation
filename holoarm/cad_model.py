@@ -27,6 +27,9 @@ def load_scene():
 
 def patch_config(cfg):
     scene=load_scene()['impact_wall']
+    cfg.setdefault('rigid_model','hard-arm')
+    if cfg['rigid_model'] not in ('hard-arm','locked-cad'):
+        raise ValueError('rigid_model must be hard-arm or locked-cad')
     for key,value in [('wall_front_x_m',scene['front_x_m']),('wall_thickness_m',scene['thickness_m']),
                       ('wall_width_m',scene['width_m']),('wall_height_m',scene['height_m'])]:cfg.setdefault(key,value)
     for legacy in ('yaw_stiffness_nm_rad','yaw_damping_nms_rad','pitch_stiffness_nm_rad',
@@ -40,7 +43,7 @@ def patch_config(cfg):
         material_model='frozen_one_arm_v2',contact_model='normal_only_ideal_slip',
         constitutive_parameters=RHEO,
         nonlinear_stiffness_parameters=STIFFNESS,
-        notes='User CAD and frozen bench v2; assumed neutral-hover preload and ideal-slip guard contact. Rigid baseline is the same CAD with arms locked, not a measured fracture model.')
+        notes='User CAD and frozen bench v2; assumed neutral-hover preload and ideal-slip guard contact. The rigid_model setting selects the previous illustrative hard-arm frame or the optional locked-CAD control; neither is an identified fracture model.')
     return cfg
 
 def build_cad_model(kind,cfg,width=640,height=540,environment=None,model_transform=None):

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Audit timestep sensitivity of a CAD wall impact, without prescribing recovery."""
+"""Audit soft-CAD and selected rigid wall impacts without prescribing recovery."""
 import argparse
 import json
 import math
@@ -21,6 +21,8 @@ def main():
     parser.add_argument('--output', type=Path, default=Path(__file__).resolve().parent.parent/
                         'outputs'/'wall_collision_study'/'numerical_audit.json')
     parser.add_argument('--impact-speed', type=float, default=.6)
+    parser.add_argument('--rigid-model', choices=('hard-arm', 'locked-cad'), default=None,
+                        help='Override the configured rigid reference (default configuration: hard-arm)')
     parser.add_argument('--duration', type=float, default=2., help='Simulated seconds after approach')
     args = parser.parse_args()
     if not math.isfinite(args.impact_speed) or args.impact_speed <= 0:
@@ -28,6 +30,8 @@ def main():
     if not math.isfinite(args.duration) or args.duration <= 0:
         parser.error('--duration must be positive and finite')
     cfg = load_config()
+    if args.rigid_model is not None:
+        cfg['rigid_model'] = args.rigid_model
     cfg['post_impact_s'] = args.duration
     cases = []
     for step in (cfg['timestep_s'], cfg['timestep_s']/2):
@@ -36,7 +40,7 @@ def main():
             row = dict(timestep_s=step, **trial.summary())
             row['finite_state'] = bool(np.isfinite(trial.data.qpos).all() and np.isfinite(trial.data.qvel).all())
             cases.append(row)
-            print(f"dt={step:g} {kind}: impact={row['actual_impact_speed_m_s']}, "
+            print(f"dt={step:g} {row['model_label']}: impact={row['actual_impact_speed_m_s']}, "
                   f"recovered={row['recovered']}, floor={row['ground_contact_time_s'] is not None}, "
                   f"joint_guard={row['joint_guard_reached']}", flush=True)
     comparisons = []
@@ -45,7 +49,8 @@ def main():
         valid = all(row['actual_impact_speed_m_s'] is not None and row['finite_state'] and
                     row['simulation_warning_count'] == 0 for row in (coarse, fine))
         comparisons.append(dict(
-            kind=kind, both_cases_have_finite_warning_free_impact=valid,
+            kind=kind, model_variant=coarse['model_variant'], model_label=coarse['model_label'],
+            both_cases_have_finite_warning_free_impact=valid,
             recovery_classification_consistent=coarse['recovered'] == fine['recovered'],
             floor_contact_classification_consistent=(coarse['ground_contact_time_s'] is not None) ==
                                                   (fine['ground_contact_time_s'] is not None),

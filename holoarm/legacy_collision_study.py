@@ -17,7 +17,7 @@ from pathlib import Path
 import subprocess
 import xml.etree.ElementTree as ET
 
-if "MUJOCO_GL" not in os.environ and not os.environ.get("DISPLAY"):
+if os.name != 'nt' and "MUJOCO_GL" not in os.environ and not os.environ.get("DISPLAY"):
     os.environ["MUJOCO_GL"] = "egl"
 
 import mujoco

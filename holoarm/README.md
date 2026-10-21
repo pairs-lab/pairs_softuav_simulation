@@ -1,9 +1,10 @@
 # HoLoArm CAD simulation
 
-The current demos use the supplied full-drone CAD, nonlinear loading stiffness
-and one-arm v2 viscoelastic parameters. The narrow-passage viewer, wall study
-and ROS adapter share the model builder and material integration. See
-[CAD parameters and assumptions](CAD_MODEL.md) for the parameter files, units,
+The soft vehicle uses the supplied full-drone CAD, nonlinear loading stiffness
+and one-arm v2 viscoelastic parameters. The narrow-passage viewer, soft wall
+trial and ROS adapter share the model builder and material integration. The
+wall comparison defaults to the previous hard-arm model for the rigid vehicle.
+See [CAD parameters and assumptions](CAD_MODEL.md) for the parameter files, units,
 motor numbering and remaining modeling assumptions.
 
 ## Contents
@@ -14,9 +15,10 @@ holoarm/
 ├── models/scene_config.json        # wall/passage dimensions
 ├── models/wall_collision_config.json
 ├── cad_model.py                    # CAD builder and material forces
+├── hard_arm_model.py               # previous rigid geometry with X2-inspired artwork
 ├── holoarm_narrow_passage_viewer.py # interactive flight and headless passage check
 ├── cad_wall_viewer.py              # interactive wall-impact experiment
-└── wall_collision_comparison.py    # soft-vs-locked-CAD videos and metrics
+└── wall_collision_comparison.py    # soft CAD vs hard-arm videos and metrics
 ```
 
 ## Run
@@ -33,9 +35,14 @@ python holoarm/wall_collision_comparison.py --sweep --results-dir outputs/wall_c
 The default sweep uses 0.3, 0.6 and 0.9 m/s. Use `--speeds` for custom speeds,
 `--no-video` for metrics only and `--overwrite` to replace existing target
 videos. FFmpeg is bundled by `imageio-ffmpeg` in `requirements.txt`.
-The reference has the same CAD and mass with locked arms; fracture is disabled
-by default. `--assumed-fracture` explicitly enables legacy, uncalibrated damage
-thresholds. See [wall-test methodology](WALL_COLLISION_STUDY.md).
+The default `--rigid-model hard-arm` uses the previous rigid model with its
+X2-inspired artwork. Total mass, controller and test timing match the soft
+trial, while rigid geometry, rotor layout and contact envelope remain distinct.
+The artwork does not represent identified Skydio X2 dynamics. Use
+`--rigid-model locked-cad` for the optional reference with the same HoLoArm CAD
+and locked arms. Fracture is disabled by default; `--assumed-fracture` explicitly
+enables legacy, uncalibrated damage thresholds. See
+[wall-test methodology](WALL_COLLISION_STUDY.md).
 
 Wall and passage dimensions are full dimensions in metres, configured in
 `models/scene_config.json`. `--wall-thickness` overrides impact-wall thickness
@@ -83,8 +90,9 @@ headless smoke test checks hover, contact, passage and recovery.
 Historical `behavior`, `restored`, `compression_then_lean` and `rigid_offset`
 scripts use `legacy_collision_study.py` and the original illustrative model.
 `holoarm_physics.xml`, `soft_holoarm_visual.xml` and `rigid_x2_visual.xml` are
-retained for those scenarios. Their old videos and test results do not describe
-the CAD model. See [legacy behavior notes](RIGID_WALL_BEHAVIOR.md).
+retained for those scenarios and the current hard-arm reference. Their old
+videos and test results do not describe the updated soft CAD. See
+[legacy behavior notes](RIGID_WALL_BEHAVIOR.md).
 
 ## Citation
 

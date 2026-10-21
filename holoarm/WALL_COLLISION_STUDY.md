@@ -1,10 +1,13 @@
-# HoLoArm CAD wall-impact study
+# HoLoArm CAD vs hard-arm wall-impact study
 
-This study uses the supplied CAD, nonlinear loading laws and v2 material
-memory through `cad_model.py`. Both vehicles share CAD geometry, mass and rotor
-layout. The soft vehicle has articulated arms; the reference locks those arms
-with four welds. Historical X2-style demonstrations and linear-spring results
-are described in [legacy methodology](LEGACY_WALL_COLLISION_STUDY.md).
+The soft vehicle uses the supplied CAD, nonlinear loading laws and v2 material
+memory through `cad_model.py`. The default rigid reference is the previous
+hard-arm model with X2-inspired artwork. It retains its original geometry,
+rotor layout, mass/inertia distribution and contact envelope while sharing
+the soft trial's total mass, controller and test timing. Its artwork is
+illustrative, not an identified Skydio X2 dynamics model. Historical
+demonstrations and linear-spring results are described in
+[legacy methodology](LEGACY_WALL_COLLISION_STUDY.md).
 
 ## Run
 
@@ -14,6 +17,11 @@ python holoarm/wall_collision_comparison.py --sweep --results-dir outputs/wall_c
 python holoarm/wall_collision_comparison.py --speeds .3 .6 --no-video --results-dir outputs/cad_metrics
 python holoarm/validate_wall_collision.py --help
 ```
+
+The default reference is `--rigid-model hard-arm`. Select
+`--rigid-model locked-cad` for the optional control using the same HoLoArm CAD
+and rotor layout with four welded arms. The default comparison changes
+geometry and compliance; the locked-CAD control holds geometry fixed.
 
 The default sweep is 0.3, 0.6 and 0.9 m/s. Use `--overwrite` to replace existing
 target videos. Existing reports, CSV/JSON metrics and plots are regenerated in
@@ -35,12 +43,16 @@ an imposed initial test condition, rather than a simulated acceleration flight.
 The study records the actual velocity immediately before first contact.
 No pose or velocity correction creates the post-impact response.
 
-The controller uses current rotor poses for force allocation, with a 40 ms
-motor response. Nonlinear restoring and Maxwell-memory forces are applied at
-each physics step; viscous damping is integrated implicitly once. The neutral
-CAD hover geometry assumes a fixed internal preload.
+Both vehicles use the same controller with their current rotor poses for force
+allocation, the same thrust limits and a 40 ms motor response. For the soft
+vehicle, nonlinear restoring and Maxwell-memory forces are applied at each
+physics step; viscous damping is integrated implicitly once. The neutral
+CAD hover geometry assumes a fixed internal preload. Frozen soft stiffness
+and rheology coefficients are unchanged by the choice of rigid reference.
 
-Guard contact is normal-only with ideal tangential slip. `--wall-thickness`
+Both rigid references use the soft trial's guard-wall contact parameters. Guard
+contact is normal-only with ideal tangential slip, while the hard-arm reference
+retains its earlier guard geometry. `--wall-thickness`
 changes the wall's full thickness while preserving its front contact face.
 Changing only the back face should not change the initial impact response.
 
@@ -60,8 +72,8 @@ Recovery requires position within 12 cm of the retreat target, speed below
 floor contact, continuously for 0.3 s. This is a simulation test criterion.
 
 Arm fracture is disabled by default. `--assumed-fracture` enables the original
-uncalibrated force/moment thresholds on the locked reference. Soft-material
-rupture is absent. Neither recovery nor lack of solver warnings establishes
+uncalibrated force/moment thresholds on the selected rigid reference.
+Soft-material rupture is absent. Neither recovery nor lack of solver warnings establishes
 hardware survival, general soft-frame superiority or flight-model validation.
 
 Supplied bench rheology is conditional on the identified release protocol;
@@ -72,8 +84,9 @@ K/C values are imported unchanged and are not tuned to force a recovery result.
 ## Historical outputs
 
 Existing `outputs/wall_collision_baseline/` files from the old model are
-historical. Importing CAD does not replace them. The supplied reference CAD
-checks are retained in `outputs/cad_checks/`.
+historical. Importing CAD does not replace them. Earlier comparisons with the
+same CAD and locked arms describe the `locked-cad` control rather than the
+current hard-arm default.
 
 Historical behavior demos explicitly import `legacy_collision_study.py` and
 legacy JSON configurations. They do not silently reuse CAD parameters.

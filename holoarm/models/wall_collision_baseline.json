@@ -9,6 +9,7 @@
     "guard_radius_m": 0.085,
     "slide_range_m": 0.008,
     "bend_limit_deg": 40.10704565915762,
+    "rigid_model": "hard-arm",
     "rigid_failure_moment_nm": 110.0,
     "rigid_failure_force_n": 2000.0,
     "motor_time_constant_s": 0.04,
@@ -19,7 +20,7 @@
     "recovery_speed_tolerance_m_s": 0.25,
     "recovery_tilt_tolerance_deg": 8.0,
     "recovery_hold_s": 0.3,
-    "notes": "User CAD and frozen bench v2; assumed neutral-hover preload and ideal-slip guard contact. Rigid baseline is the same CAD with arms locked, not a measured fracture model.",
+    "notes": "User CAD and frozen bench v2; assumed neutral-hover preload and ideal-slip guard contact. The rigid_model setting selects the previous illustrative hard-arm frame or the optional locked-CAD control; neither is an identified fracture model.",
     "parameter_files": {
       "stiffness": "holoarm_cad/stiffness.json",
       "viscoelasticity": "holoarm_cad/rheology.json",
@@ -95,5 +96,37 @@
     "rheology_sha256": "74fc7f6a269defd15093712150bb7a5ecc94c70ac6ba5367e1be134fb29c8c41",
     "stiffness_sha256": "b848346204df7aa2f2e78202dcb48d875f10cc5dd5b3dc81ca517ae9dc39ac2f",
     "scope": "Frozen bench parameters with assumed hover preload and ideal-slip contact; not a validated flight digital twin."
+  },
+  "rigid_model_provenance": {
+    "model": "Original generic hard-arm frame with X2-inspired artwork",
+    "geometry_model": "legacy_hard_arm",
+    "mechanics": "Original primitive collision geometry and relative mass distribution; four welded free arms",
+    "visuals": "Original X2-inspired artwork plus visible physical guard rings; no CAD skins",
+    "guard_radius_m": 0.105,
+    "guard_capsule_radius_m": 0.003,
+    "guard_segments_per_rotor": 20,
+    "yaw_torque_per_thrust_m": 0.02,
+    "contact_model": "normal_only_ideal_slip_guard_wall",
+    "source_sha256": {
+      "models/holoarm_physics.xml": "fb07c237fcf1e29fe92d2011d0294d4e05afd6f1f06964e57fadcac62e3cd3d7",
+      "models/rigid_x2_visual.xml": "d8f9ca91e95e4562dfeb37c69dfa347850520d689f7d02a1b3bd34783182c349",
+      "models/legacy_wall_collision_config.json": "d1b042519e48fad48073983c85e1e4aa54c5b5dcd659aa517020517e8c634f01"
+    },
+    "scope": "Illustrative generic hard-arm mechanics, not measured Skydio geometry, inertia or fracture data. No CAD stiffness or rheology is applied.",
+    "shared_trial_parameters": {
+      "mass_kg": 0.97,
+      "timestep_s": 0.0004,
+      "altitude_m": 1.2,
+      "max_motor_thrust_n": 7.876,
+      "motor_time_constant_s": 0.04,
+      "contact_time_constant_s": 0.003,
+      "contact_damping_ratio": 1.0
+    },
+    "wall_geometry": {
+      "wall_front_x_m": 0.505,
+      "wall_thickness_m": 0.09,
+      "wall_width_m": 2.4,
+      "wall_height_m": 2.5
+    }
   }
 }

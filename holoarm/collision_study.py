@@ -1,7 +1,8 @@
 """Wall impacts with the supplied HoLoArm CAD and frozen bench material model.
 
-The reference uses the same CAD with its arms locked. Neutral-hover preload,
-flight control and ideal-slip contacts are assumptions, not flight validation.
+The default rigid reference uses the previous hard-arm / X2-style model.
+The same CAD with locked arms remains an explicit alternate reference.
+Neutral-hover preload, flight control and ideal-slip wall contacts are assumptions.
 Historical illustrative mechanics live separately in legacy_collision_study.
 """
 from __future__ import annotations
@@ -21,7 +22,7 @@ import mujoco
 import numpy as np
 
 from soft_visual import add_soft_ligaments
-from cad_model import build_cad_model, CADMaterial, patch_config, provenance, load_scene
+from cad_model import build_cad_model, CADMaterial, patch_config, provenance as cad_provenance, load_scene
 
 HERE = Path(__file__).resolve().parent
 CONFIG = HERE / "models" / "wall_collision_config.json"
@@ -29,6 +30,12 @@ ARMS = ("fl", "fr", "rl", "rr")
 WALL_FRONT = load_scene()['impact_wall']['front_x_m']
 WALL_X = WALL_FRONT + load_scene()['impact_wall']['thickness_m']/2
 SPEEDS = (.3, .6, .9)
+MODEL_LABELS = {'soft-cad': 'Soft HoLoArm CAD', 'hard-arm': 'Hard-arm / X2-style',
+                'locked-cad': 'Locked HoLoArm CAD'}
+RIGID_DESCRIPTIONS = {
+    'hard-arm': 'Previous hard-arm geometry and X2-style artwork, with its own rotor layout and inertia; '
+                'this is an illustrative rigid model, not calibrated Skydio X2 hardware.',
+    'locked-cad': 'The same HoLoArm CAD with its arms locked: a counterfactual reference.'}
 
 
 def load_config(path=CONFIG):
@@ -41,8 +48,62 @@ def load_config(path=CONFIG):
 
 def build_model(kind, cfg, width=640, height=540, rigid_visual='x2', soft_visual='holoarm', environment=None,
                 model_transform=None):
-    """Build the CAD model; visual keywords remain for caller compatibility."""
+    """Build compliant CAD or the selected rigid reference."""
+    variant = model_variant(kind, cfg)
+    if variant == 'hard-arm':
+        from hard_arm_model import build_hard_arm_model
+        return build_hard_arm_model(cfg, width, height, environment, model_transform)
     return build_cad_model(kind,cfg,width,height,environment,model_transform)
+
+
+def model_variant(kind, cfg):
+    if kind == 'soft':
+        return 'soft-cad'
+    if kind != 'rigid':
+        raise ValueError('kind must be soft or rigid')
+    variant = cfg.get('rigid_model', 'hard-arm')
+    if variant not in ('hard-arm', 'locked-cad'):
+        raise ValueError('rigid_model must be hard-arm or locked-cad')
+    return variant
+
+
+def model_provenance(variant, cfg):
+    if variant == 'hard-arm':
+        from hard_arm_model import hard_arm_provenance
+        return hard_arm_provenance(cfg)
+    result = cad_provenance()
+    result['reference'] = 'compliant CAD' if variant == 'soft-cad' else 'same CAD with arms locked'
+    return result
+
+
+def contact_front_x(model, data, wall):
+    """Exact world-X support of primitives eligible to collide with the wall."""
+    fronts = []
+    for geom in range(model.ngeom):
+        if model.geom_bodyid[geom] == 0:
+            continue
+        if not ((model.geom_contype[geom] & model.geom_conaffinity[wall]) or
+                (model.geom_contype[wall] & model.geom_conaffinity[geom])):
+            continue
+        kind = model.geom_type[geom]
+        size = model.geom_size[geom]
+        row = data.geom_xmat[geom].reshape(3, 3)[0]
+        if kind == mujoco.mjtGeom.mjGEOM_SPHERE:
+            extent = size[0]
+        elif kind == mujoco.mjtGeom.mjGEOM_CAPSULE:
+            extent = size[0]+abs(row[2])*size[1]
+        elif kind == mujoco.mjtGeom.mjGEOM_CYLINDER:
+            extent = size[0]*np.linalg.norm(row[:2])+abs(row[2])*size[1]
+        elif kind == mujoco.mjtGeom.mjGEOM_BOX:
+            extent = np.abs(row)@size
+        elif kind == mujoco.mjtGeom.mjGEOM_ELLIPSOID:
+            extent = np.linalg.norm(row*size)
+        else:
+            raise ValueError(f'Unsupported wall-contact geometry: {model.geom(geom).name}')
+        fronts.append(float(data.geom_xpos[geom, 0]+extent))
+    if not fronts:
+        raise ValueError('The vehicle has no geometry eligible for wall contact')
+    return max(fronts)
 
 
 def tilt_deg(data, core):
@@ -55,6 +116,8 @@ class Trial:
         self.kind, self.speed, self.cfg = kind, speed, dict(cfg)
         if timestep is not None:
             self.cfg['timestep_s'] = timestep
+        self.model_variant = model_variant(kind, self.cfg)
+        self.model_label = MODEL_LABELS[self.model_variant]
         self.model = build_model(kind, self.cfg, model_transform=model_transform)
         self.data = mujoco.MjData(self.model)
         self.core = self.model.body('holoarm_core').id
@@ -270,7 +333,7 @@ class Trial:
             self.nominal_bend = self.data.qpos[self.bend_indices].copy()
         # Position both settled assemblies the same distance from first contact
         # and inject velocity into every free body (including welded arms).
-        leading = max(self.data.site_xpos[s,0] for s in self.sites)+self.cfg['guard_radius_m']+.003
+        leading = contact_front_x(self.model, self.data, self.wall)
         wall_front=float(self.model.geom_pos[self.wall,0]-self.model.geom_size[self.wall,0])
         shift = wall_front-leading-self.speed*self.cfg['approach_s']
         for j in range(self.model.njnt):
@@ -298,7 +361,8 @@ class Trial:
         start = max(0,round((self.impact_time or 0)/self.model.opt.timestep)-samples)
         stop = min(len(averaged),start+round(.25/self.model.opt.timestep))
         filtered_peak = float(max(0.,np.max(averaged[start:stop]))) if stop>start else 0.
-        return dict(kind=self.kind, requested_speed_m_s=self.speed, actual_impact_speed_m_s=self.actual_impact_speed,
+        return dict(kind=self.kind, model_variant=self.model_variant, model_label=self.model_label,
+                    requested_speed_m_s=self.speed, actual_impact_speed_m_s=self.actual_impact_speed,
                     impact_time_s=self.impact_time, peak_wall_force_n=self.peak_force,
                     peak_horizontal_acceleration_m_s2=self.peak_accel, first_impact_impulse_ns=self.impulse,
                     peak_10ms_mean_body_deceleration_m_s2=filtered_peak,
@@ -312,7 +376,7 @@ class Trial:
                     recovery_time_s=self.recovery_time, final_position_m=self.data.qpos[:3].tolist(),
                     final_speed_m_s=float(np.linalg.norm(self.data.qvel[:3])),
                     simulation_warning_count=int(sum(w.number for w in self.data.warning)),
-                    model_provenance=provenance(),
+                    model_provenance=model_provenance(self.model_variant, self.cfg),
                     joint_guard_reached=self.joint_guard_reached)
 
 
@@ -382,7 +446,7 @@ def render_video(trials, output, width=640, height=540, fps=30, show_height_loss
                     draw = ImageDraw.Draw(panel)
                     draw.rectangle((0,0,width,102),fill=(15,21,30))
                     colour = (70,190,255) if t.kind=='soft' else (255,145,70)
-                    title = 'SOFT / HoLoArm CAD' if t.kind=='soft' else 'LOCKED / same HoLoArm CAD'
+                    title = t.model_label
                     draw.text((12,8),f'{title}  |  {t.speed:g} m/s',font=font,fill=colour)
                     if broken.any():
                         state = f'FRACTURE: {broken.sum()} arm(s) detached'
@@ -428,10 +492,13 @@ def write_results(trials, directory, cfg):
     directory = Path(directory)
     directory.mkdir(parents=True,exist_ok=True)
     summaries = [t.summary() for t in trials]
+    rigid_variants = {t.model_variant for t in trials if t.kind == 'rigid'} or {cfg.get('rigid_model', 'hard-arm')}
     (directory/'results.json').write_text(json.dumps(dict(config=cfg,visual=dict(
         soft='HoLoArm user CAD, frozen nonlinear K and v2 viscoelastic model',
-        rigid='Same HoLoArm CAD with arms locked: counterfactual baseline',
-        physics='Same CAD, mass and rotor sites; ideal-slip contact; no assumed fracture by default'),
+        rigid=' '.join(RIGID_DESCRIPTIONS[v] for v in sorted(rigid_variants)),
+        physics='Shared total mass, controller, thrust limits, motor response and guard-wall contact parameters; '
+                'each model retains its own collision geometry, inertia and yaw-reaction coefficient. '
+                'Normal-only ideal-slip wall contact; no assumed fracture by default'),
         results=summaries),indent=2))
     with (directory/'summary.csv').open('w',newline='') as f:
         writer = csv.DictWriter(f,fieldnames=list(summaries[0]))
@@ -449,24 +516,28 @@ def write_results(trials, directory, cfg):
 
 def write_report(summaries,directory,cfg):
     fracture_enabled=any(r['fracture_enabled'] for r in summaries)
+    rigid_variants={row['model_variant'] for row in summaries if row['kind']=='rigid'} or {cfg.get('rigid_model','hard-arm')}
     lines = [
-        '# HoLoArm CAD wall-collision comparison', '',
+        '# Soft HoLoArm CAD vs rigid reference: wall collision', '',
         'The compliant vehicle uses the supplied CAD and frozen nonlinear stiffness and v2 '
-        'viscoelastic parameters. The reference uses the same CAD with its arms locked.', '',
+        'viscoelastic parameters.',
+        ' '.join(RIGID_DESCRIPTIONS[v] for v in sorted(rigid_variants)), '',
         f"Mass: {cfg['mass_kg']:g} kg; timestep: {cfg['timestep_s']:g} s; motor response: {cfg['motor_time_constant_s']:g} s.",
         f"Wall front: {cfg['wall_front_x_m']:g} m; full thickness: {cfg['wall_thickness_m']:g} m.",
-        'Both cases use the same PD controller and initial-speed protocol. Neutral-hover preload '
-        'and normal-only ideal-slip contacts remain assumptions.', '',
+        'Both cases use the same total mass, PD controller, thrust limits, motor response, '
+        'guard-wall contact parameters and initial-speed protocol. '
+        'Each starts the same distance from wall contact using its actual collision envelope. '
+        'Neutral-hover preload and normal-only ideal-slip wall contacts remain assumptions.', '',
         ('Uncalibrated legacy fracture thresholds were explicitly enabled: '
          f"arm moment > {cfg['rigid_failure_moment_nm']:g} Nm or force > {cfg['rigid_failure_force_n']:g} N."
-         if fracture_enabled else 'Assumed arm fracture is disabled; locked arms are a counterfactual reference.'), '',
+         if fracture_enabled else 'Assumed arm fracture is disabled for the rigid reference.'), '',
         '| Set speed (m/s) | Model | Actual impact (m/s) | Bend (deg) | Compression (mm) | Joint guard reached | Recovery (s) | Floor contact |',
         '|---:|:---|---:|---:|---:|:---:|---:|:---:|'
     ]
     for row in summaries:
         recovery=f"{row['recovery_time_s']:.3f}" if row['recovery_time_s'] is not None else 'Not observed'
         actual=f"{row['actual_impact_speed_m_s']:.3f}" if row['actual_impact_speed_m_s'] is not None else 'No impact'
-        model='Compliant CAD' if row['kind']=='soft' else 'Locked CAD'
+        model=row['model_label']
         guard='Yes' if row['joint_guard_reached'] else 'No'
         floor='Yes' if row['ground_contact_time_s'] is not None else 'No'
         lines.append(f"| {row['requested_speed_m_s']:g} | {model} | {actual} | {row['peak_bend_deg']:.1f} | "
@@ -476,7 +547,7 @@ def write_report(summaries,directory,cfg):
         f"speed < {cfg['recovery_speed_tolerance_m_s']:g} m/s and tilt < {cfg['recovery_tilt_tolerance_deg']:g} deg "
         f"for {cfg['recovery_hold_s']:g} s, without wall/floor contact or detached arms. "
         'The time is measured from first contact to the start of that hold.', '',
-        'See results.json and summary.csv for material provenance hashes, raw first-impact force peaks, '
+        'See results.json and summary.csv for the actual model provenance, soft material hashes, raw first-impact force peaks, '
         '10 ms mean body deceleration, slide overtravel, solver warnings and final states. '
         'Traces distinguish positive axial compression from absolute slide displacement.', '',
         '**Limits:** Frozen bench identification does not validate flight behavior, preload, collision '
@@ -500,13 +571,16 @@ def plot_results(summaries,directory):
              ('recovery_time_s','Hover recovery time (s); missing = failed')]
     for kind,colour in [('soft','#168eca'),('rigid','#ec752a')]:
         rows = [r for r in summaries if r['kind']==kind]
+        if not rows:
+            continue
         for ax,(key,label) in zip(axes.flat,plots):
             ax.plot([r['actual_impact_speed_m_s'] for r in rows],
-                    [np.nan if r[key] is None else r[key] for r in rows],'-o',label=kind,color=colour,ms=4)
+                    [np.nan if r[key] is None else r[key] for r in rows],'-o',label=rows[0]['model_label'],color=colour,ms=4)
             ax.set(xlabel='Measured impact speed (m/s)',ylabel=label)
             ax.grid(alpha=.25)
             ax.legend()
-    fig.suptitle('HoLoArm CAD wall impact: frozen bench material vs locked arms, same PD controller')
+    references=', '.join(sorted({r['model_label'] for r in summaries if r['kind']=='rigid'}))
+    fig.suptitle(f'Soft HoLoArm CAD vs {references}: same PD controller')
     fig.savefig(Path(directory)/'speed_sweep.png',dpi=180)
     plt.close(fig)
 
@@ -530,6 +604,8 @@ def cli():
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument('--config',type=Path,default=CONFIG)
     p.add_argument('--impact-speed',type=float,default=.6)
+    p.add_argument('--rigid-model',choices=('hard-arm','locked-cad'),default=None,
+                   help='Rigid comparison model (default: previous hard-arm / X2-style model)')
     p.add_argument('--wall-thickness',type=float,help='Full thickness in metres; front contact face stays fixed')
     p.add_argument('--sweep',action='store_true',help='CAD comparison at 0.3, 0.6 and 0.9 m/s')
     p.add_argument('--speeds',type=float,nargs='+',help='custom survey speeds')
@@ -538,7 +614,7 @@ def cli():
     p.add_argument('--no-video',action='store_true')
     p.add_argument('--overwrite',action='store_true',help='replace existing target videos and regenerate results')
     fracture_group=p.add_mutually_exclusive_group()
-    fracture_group.add_argument('--no-fracture',action='store_true',default=True,help='locked CAD reference without assumed fracture (default)')
+    fracture_group.add_argument('--no-fracture',action='store_true',default=True,help='rigid reference without assumed fracture (default)')
     fracture_group.add_argument('--assumed-fracture',dest='no_fracture',action='store_false',help='explicitly enable uncalibrated legacy fracture thresholds')
     p.add_argument('--duration',type=float,help='simulated seconds after first expected impact')
     p.add_argument('--width',type=int,default=640)
@@ -546,6 +622,8 @@ def cli():
     p.add_argument('--fps',type=int,default=30)
     args = p.parse_args()
     cfg = load_config(args.config)
+    if args.rigid_model is not None:
+        cfg['rigid_model'] = args.rigid_model
     if args.wall_thickness is not None:
         if not math.isfinite(args.wall_thickness) or args.wall_thickness<=0:p.error('wall thickness must be positive and finite')
         cfg['wall_thickness_m']=args.wall_thickness
@@ -572,7 +650,7 @@ def cli():
         all_trials.extend(trials)
         for t in trials:
             s=t.summary()
-            print(f"{speed:g} m/s {t.kind}: actual={s['actual_impact_speed_m_s']:.3f}, "
+            print(f"{speed:g} m/s {t.model_label}: actual={s['actual_impact_speed_m_s']:.3f}, "
                   f"bend={s['peak_bend_deg']:.1f} deg, tilt={s['peak_tilt_deg']:.1f} deg, "
                   f"broken={s['broken_arms']}, recovery={s['recovery_time_s']}",flush=True)
         if not args.no_video:

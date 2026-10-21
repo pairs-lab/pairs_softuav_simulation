@@ -30,8 +30,9 @@ class CADIntegrationTests(unittest.TestCase):
         self.assertAlmostEqual(restoring([0,.1,0])[1],.383*np.tanh(1.8694*.1/.383))
         self.assertGreater(abs(restoring([0,0,-.4])[2]),abs(restoring([0,0,.4])[2]))
 
-    def test_rigid_is_same_cad_and_no_legacy_transforms(self):
-        soft=build_model('soft',load_config());rigid=build_model('rigid',load_config())
+    def test_explicit_locked_rigid_is_same_cad_and_no_legacy_transforms(self):
+        cfg=load_config();cfg['rigid_model']='locked-cad'
+        soft=build_model('soft',cfg);rigid=build_model('rigid',cfg)
         self.assertEqual(rigid.nmesh,37);self.assertEqual(rigid.neq,4)
         self.assertAlmostEqual(soft.body_mass.sum(),rigid.body_mass.sum())
         self.assertFalse(any(rigid.jnt_type==mujoco.mjtJoint.mjJNT_SLIDE))

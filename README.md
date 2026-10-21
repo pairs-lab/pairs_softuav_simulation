@@ -15,8 +15,11 @@ MuJoCo drone simulations with two independent demos:
   Needs the external [`mujoco_menagerie`](https://github.com/google-deepmind/mujoco_menagerie)
   model (one extra download — see below).
 
-The wall study compares soft HoLoArm with the same CAD and mass with locked
-arms. See [CAD parameters and assumptions](holoarm/CAD_MODEL.md).
+The wall study compares soft HoLoArm CAD with the previous hard-arm model and
+its X2-inspired artwork by default. Both use the same total mass, controller
+and test timing; the rigid model retains its distinct geometry and contact
+envelope. Its artwork is illustrative, not an identified Skydio X2 dynamics
+model. See [CAD parameters and assumptions](holoarm/CAD_MODEL.md).
 
 ## Branches
 
@@ -41,7 +44,7 @@ pairs_softuav_simulation/
 │   ├── models/scene_config.json      # wall and passage dimensions
 │   ├── cad_model.py                 # CAD builder + nonlinear viscoelastic forces
 │   ├── holoarm_narrow_passage_viewer.py # current interactive narrow-gap demo
-│   └── wall_collision_comparison.py  # soft-vs-locked-CAD MP4 renderer
+│   └── wall_collision_comparison.py  # soft CAD vs hard-arm MP4 renderer
 ├── skydio_x2/
 │   ├── models/
 │   │   ├── indoor_env.xml            # house environment; includes the X2 model
@@ -94,11 +97,13 @@ The CAD comparison renderer uses FFmpeg bundled in `requirements.txt`:
 # Render a single impact
 python holoarm/wall_collision_comparison.py --impact-speed .6 --duration 1.5
 
-# Render CAD comparisons at 0.3, 0.6 and 0.9 m/s
+# Render soft CAD vs hard-arm comparisons at 0.3, 0.6 and 0.9 m/s
 python holoarm/wall_collision_comparison.py --sweep \
   --results-dir outputs/wall_collision_cad
 ```
 
+The default is `--rigid-model hard-arm`. Use `--rigid-model locked-cad` for
+the optional control with the same HoLoArm CAD and locked arms.
 Use `--output /path/to/result.mp4` to set the single-video output path.
 Add `--overwrite` to rerun in the same directory and replace existing target videos.
 The script automatically uses EGL when no desktop display is available.
@@ -119,8 +124,9 @@ WSL. Rendering needs a working OpenGL graphics driver; FFmpeg is bundled with
 the Python dependencies.
 
 Historical behavior scripts use `holoarm/legacy_collision_study.py` and their
-original illustrative mechanics. Their 2–7.6 m/s results and X2-style artwork
-are separate from the current CAD model; see [legacy behavior notes](holoarm/RIGID_WALL_BEHAVIOR.md).
+original illustrative mechanics. Their 2–7.6 m/s results describe those earlier
+experiments. The current wall comparison reuses the rigid model with the
+updated soft CAD; see [legacy behavior notes](holoarm/RIGID_WALL_BEHAVIOR.md).
 
 Skydio X2 indoor teleop — first fetch the drone model into `skydio_x2/models/`:
 

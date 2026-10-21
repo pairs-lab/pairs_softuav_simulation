@@ -8,6 +8,7 @@
   "guard_radius_m": 0.085,
   "slide_range_m": 0.008,
   "bend_limit_deg": 40.10704565915762,
+  "rigid_model": "hard-arm",
   "rigid_failure_moment_nm": 110.0,
   "rigid_failure_force_n": 2000.0,
   "motor_time_constant_s": 0.04,

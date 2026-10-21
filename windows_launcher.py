@@ -37,7 +37,7 @@ def main():
                 messagebox.showinfo('Xuất video','Đang chạy và xuất video ở cửa sổ dòng lệnh. Hoàn tất rồi mở thư mục outputs để xem.')
             subprocess.Popen([sys.executable,*args],cwd=ROOT)
         except Exception as e:messagebox.showerror('Không chạy được',str(e))
-    for text,mode in [('1. BAY QUA KHE HẸP — điều khiển bàn phím','gap'),('2. VA TƯỜNG — quan sát trực tiếp','wall'),('3. XUẤT VIDEO — HoLoArm mềm / cùng CAD khóa cứng','comparison')]:
+    for text,mode in [('1. BAY QUA KHE HẸP — điều khiển bàn phím','gap'),('2. VA TƯỜNG — quan sát trực tiếp','wall'),('3. XUẤT VIDEO — HoLoArm CAD mềm / tay cứng X2-style','comparison')]:
         ttk.Button(pane,text=text,command=lambda mode=mode:launch(mode)).pack(fill='x',pady=7,ipady=6)
     ttk.Label(pane,text='Khe: giữ I/K, J/L để bay; U/O lên/xuống; Q/E xoay.\nThả phím để hãm; H giữ vị trí; R lặp lại; Space dừng; F đổi góc nhìn.\nVa tường dùng Space, R, S và F. Kết quả do mô phỏng tự tính.',wraplength=670).pack(anchor='w',pady=12)
     def outputs():
